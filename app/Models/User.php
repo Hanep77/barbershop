@@ -56,7 +56,6 @@ class User extends Authenticatable
     }
 
     public function newUniqueId(): string
-
     {
         return (string) Uuid::uuid7();
     }
