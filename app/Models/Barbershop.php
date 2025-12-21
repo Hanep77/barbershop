@@ -19,4 +19,9 @@ class Barbershop extends Model
     {
         return (string) Uuid::uuid7();
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

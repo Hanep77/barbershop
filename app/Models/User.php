@@ -59,4 +59,9 @@ class User extends Authenticatable
     {
         return (string) Uuid::uuid7();
     }
+
+    public function barbershop()
+    {
+        return $this->hasOne(Barbershop::class);
+    }
 }

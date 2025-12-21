@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('barbershops', function (Blueprint $table) {
             $table->uuid("id")->primary();
-            $table->foreignUuid("user_id");
+            $table->foreignUuid("user_id")->constrained()->unique();
             $table->string("name", 100);
             $table->text("address");
             $table->string("map_url")->nullable();

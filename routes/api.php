@@ -13,5 +13,10 @@ Route::post("/login", [UserController::class, "login"]);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/logout", [UserController::class, "logout"]);
+
+    Route::get("/barbershop", [BarbershopController::class, "index"]);
     Route::post("/barbershop", [BarbershopController::class, "store"]);
+    Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
+    Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
+    Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);
 });
