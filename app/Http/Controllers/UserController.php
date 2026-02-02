@@ -34,6 +34,8 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
+        try {
+
         $validated = $request->validate([
             "name" => ["required"],
             "email" => ["required", "email", "unique:users,email"],
@@ -49,6 +51,13 @@ class UserController extends Controller
             "user" => $user->only(["id", "name", "email", "role"]),
             "token" => $token
         ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Registration failed",
+                "error" => $e->getMessage()
+            ], 400);
+        }
     }
 
     public function logout(Request $request)
