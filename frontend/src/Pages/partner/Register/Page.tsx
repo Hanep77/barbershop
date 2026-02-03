@@ -6,16 +6,13 @@ import { authServices } from "@/services/auth";
 import Fetcher from "@/lib/fetcher";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
-import { useLoadingBar } from "react-top-loading-bar";
-import { useState } from "react";
-import { AxiosError } from "axios";
 
 type LoginFormValues = {
   email: string;
   password: string;
 };
 
-export default function LoginPage() {
+export default function PartnerRegister() {
   const {
     register,
     handleSubmit,
@@ -24,14 +21,10 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const navigate = useNavigate();
-  const { start, complete } = useLoadingBar();
 
   const onSubmit = async (data: LoginFormValues) => {
-    start();
-    setLoading(true);
     const { url, method } = authServices.login();
     await Fetcher({
       url,
@@ -41,16 +34,14 @@ export default function LoginPage() {
       .then((response) => {
         const { data } = response;
         login(data.token, data.user);
+        setUser(data.user);
         navigate('/dashboard');
       })
       .catch((error) => {
-        if(error instanceof AxiosError){
-          toast.error(error.response?.data.error || "Login failed");
-          console.log(error.response);
+        if(error instanceof Error){
+          toast.error(error.message || "Login failed");
+          console.log(error.message);
         }
-      }).finally(() => {
-        complete();
-        setLoading(false);
       });
   };
 
@@ -100,11 +91,19 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className={`mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white ${loading ? "cursor-not-allowed opacity-50" : ""}`}
+            className="mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
           >
             Login
           </button>
+          {/* <button
+            onClick={() => {
+              navigate('/register')
+            }}
+              type="submit"
+              className="mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+            >
+              Don't have an account?
+            </button> */}
         </form>
 
         <p className="mt-4 text-[11px] text-white/60">

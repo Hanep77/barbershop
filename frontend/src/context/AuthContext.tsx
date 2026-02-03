@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   setSession: (session: Session | null) => void;
-  login: (token: string) => void;
+  login: (token: string, user: User) => void;
   logout: () => void;
   user: User | null;
   setUser: (user: User | null) => void;
@@ -44,9 +44,11 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
 
   const isAuthenticated = !!session;
 
-  const login = (token: string) => {
+  const login = (token: string, user: User) => {
     localStorage.setItem("auth_token", token);
+    localStorage.setItem("auth_user", JSON.stringify(user));
     setSession(token as unknown as Session);
+    setUser(user);
     // window.location.href = '/dashboard';
   };
 
@@ -55,7 +57,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
     localStorage.removeItem("auth_user");
     setSession(null);
     setUser(null);
-    // window.location.href = '/';
+    window.location.href = '/';
   };
 
   return (

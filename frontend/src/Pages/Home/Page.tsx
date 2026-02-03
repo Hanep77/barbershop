@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import BarbershopGrid from '@/Pages/Home/components/BarbershopGrid';
 import type { Barbershop, FilterOptions } from '@/types/Barbershop';
+import { useLoadingBar } from 'react-top-loading-bar';
 
 // Mock data - akan diganti dengan API call
 const mockBarbershops: Barbershop[] = [
@@ -146,6 +147,7 @@ export default function Home() {
     sortBy: 'rating',
     isOpen: null,
   });
+
 
   // Fetch barbershops dari API (uncomment ketika API siap)
   // useEffect(() => {

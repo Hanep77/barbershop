@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { authServices } from "@/services/auth";
 import Fetcher from "@/lib/fetcher";
@@ -7,6 +8,7 @@ import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router";
+import { useLoadingBar } from "react-top-loading-bar";
 
 type RegisterFormValues = {
   name: string;
@@ -17,8 +19,10 @@ type RegisterFormValues = {
 };
 
 export default function RegisterPage() {
-  const {login, setUser} = useAuth();
+  const {login} = useAuth();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const { start, complete } = useLoadingBar();
 
   const {
     register,
@@ -32,14 +36,17 @@ export default function RegisterPage() {
   const {url, method} = authServices.register();
 
   const onSubmit = async (data: RegisterFormValues) => {
-    await Fetcher({ url,
+    setLoading(true);
+    start();
+    await Fetcher({
+      url,
       method,
       data,
     }).then((response) => {
       const { data } = response;
-      login(data.token);
-      setUser(data.user);
+      login(data.token, data.user);
       toast.success("Registration successful");
+      navigate('/dashboard');
       // x
     }).catch((error) => {
       if(error instanceof AxiosError){
@@ -47,6 +54,9 @@ export default function RegisterPage() {
         console.log(error.response);
       }
       console.log(error)
+    }).finally(() => {
+      complete();
+      setLoading(false);
     });
     // navigate("/login");
   };
@@ -126,8 +136,8 @@ export default function RegisterPage() {
           </label>
 
           <button
-            type="submit"
-            className="mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
+                disabled={loading}
+            className={`mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white ${loading ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Register
           </button>
