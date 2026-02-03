@@ -1,27 +1,14 @@
 export interface Barbershop {
-    id: number;
-    userId?: string;
-    name: string;
-    address: string;
-    mapUrl?: string;
-    phone: string;
-    phoneNumber?: string;
-    description?: string;
-    isActive?: boolean;
-    is_open?: boolean;
-    rating: number;
-    review_count: number;
-    opening_time: string;
-    closing_time: string;
-    min_price: number;
-    max_price: number;
-    distance?: number;
-    image_url?: string;
-    latitude?: number;
-    longitude?: number;
-    services?: Service[];
-    createdAt?: string;
-    updatedAt?: string;
+  id: string;
+  user_id: string;
+  name: string;
+  address: string;
+  map_url?: string;
+  phone_number: string;
+  description?: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Service {

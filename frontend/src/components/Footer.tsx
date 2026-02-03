@@ -8,7 +8,7 @@ export default function Footer(){
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="bg-blue-600 p-2 rounded-lg">
+                <div className="bg-yellow-600 p-2 rounded-lg">
                   <Scissors size={20} />
                 </div>
                 <span className="font-bold text-lg">BarberFinder</span>

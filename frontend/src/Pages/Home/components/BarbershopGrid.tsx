@@ -43,7 +43,7 @@ export default function BarbershopGrid({ barbershops, isLoading, onCardClick }: 
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    <div className="flex gap-4 overflow-x-auto no-scrollbar p-4  ">
       {barbershops.map((barbershop) => (
         <BarbershopCard
           key={barbershop.id}

@@ -47,7 +47,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
   const login = (token: string) => {
     localStorage.setItem("auth_token", token);
     setSession(token as unknown as Session);
-    window.location.href = '/dashboard';
+    // window.location.href = '/dashboard';
   };
 
   const logout = () => {
@@ -55,7 +55,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
     localStorage.removeItem("auth_user");
     setSession(null);
     setUser(null);
-    window.location.href = '/';
+    // window.location.href = '/';
   };
 
   return (

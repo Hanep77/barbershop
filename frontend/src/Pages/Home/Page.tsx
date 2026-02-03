@@ -177,7 +177,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-700">
       {/* Barbershop Grid */}
-      <div className="max-w-7xl mx-auto">
+      <div className="container mx-auto">
         <BarbershopGrid
           barbershops={filteredBarbershops}
           isLoading={isLoading}

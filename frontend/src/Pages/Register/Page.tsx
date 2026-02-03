@@ -6,6 +6,7 @@ import Fetcher from "@/lib/fetcher";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router";
 
 type RegisterFormValues = {
   name: string;
@@ -17,6 +18,7 @@ type RegisterFormValues = {
 
 export default function RegisterPage() {
   const {login, setUser} = useAuth();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -34,10 +36,11 @@ export default function RegisterPage() {
       method,
       data,
     }).then((response) => {
-      console.log(response);
-      login(response.data.token);
-      setUser(response.data.user);
+      const { data } = response;
+      login(data.token);
+      setUser(data.user);
       toast.success("Registration successful");
+      // x
     }).catch((error) => {
       if(error instanceof AxiosError){
         toast.error(error.response?.data.error || "Registration failed");
