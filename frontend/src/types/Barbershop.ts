@@ -1,6 +1,6 @@
 export interface Barbershop {
-  id: string;
-  user_id: string;
+  id?: string;
+  user_id?: string;
   name: string;
   address: string;
   map_url?: string;

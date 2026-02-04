@@ -24,9 +24,9 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col bg-gray-700">
+    <div className="min-h-screen flex flex-col bg-gray-700">
       <Navbar />
-      <div className="container">
+      <div className="container m-auto">
         <Outlet />
       </div>
     </div>

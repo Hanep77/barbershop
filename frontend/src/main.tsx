@@ -16,6 +16,8 @@ import { AuthProvider } from "./context/AuthContext";
 import PartnerRegister from "./Pages/partner/Register/Page";
 import { LoadingBarContainer } from "react-top-loading-bar";
 
+
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <LoadingBarContainer>

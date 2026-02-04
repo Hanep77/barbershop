@@ -71,3 +71,16 @@ export const truncateText = (text: string, maxLength: number): string => {
 export const clearSession = () => {
   localStorage.removeItem('auth_token');
 }
+
+export function toParagraphCase(str: string) {
+  return str
+    .split(' ') // Split the string into an array of words based on spaces
+    .map((word, index) => {
+      if (index === 0) {
+        return word.toUpperCase();
+      }
+      // Capitalize the first letter of subsequent words and lowercase the rest
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(''); // Join the words back into a single string without spaces
+}
