@@ -7,6 +7,7 @@ import Fetcher from "@/lib/fetcher";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import MapLocation from "./components/MapLocation";
+import LocationInput from "./components/LocationInput";
 
 type RegisterPartnerFormValues = {
   name: string;
@@ -82,21 +83,6 @@ export default function PartnerRegister() {
           </label>
 
           <label className="grid gap-2">
-            <span className="text-xs text-white/70">Barbershop Address</span>
-            <input
-              type="text"
-              placeholder="Barbershop Address"
-              {...register("address", { required: "address is required" })}
-              className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
-            />
-            {errors.address && (
-              <span className="text-xs text-red-400">
-                {errors.address.message}
-              </span>
-            )}
-          </label>
-
-          <label className="grid gap-2">
             <span className="text-xs text-white/70">
               Barbershop Phone Number
             </span>
@@ -115,10 +101,10 @@ export default function PartnerRegister() {
             )}
           </label>
 
+          <LocationInput />
+
           <label className="grid gap-2">
-            <span className="text-xs text-white/70">
-              Barbershop Location
-            </span>
+            <span className="text-xs text-white/70">Barbershop Location</span>
             <MapLocation />
           </label>
 

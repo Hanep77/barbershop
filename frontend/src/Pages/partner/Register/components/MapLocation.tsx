@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useCallback, useMemo, useRef, useState } from "react";
 
+
 const center: [number, number] = [-7.356299369134257, 108.2293978319359];
 
 function DraggableMarker() {
