@@ -1,3 +1,3 @@
-export const partnerService = {
+export const partnerServices = {
   register: () => ({url: '/api/barbershop', method: "POST"})
 }

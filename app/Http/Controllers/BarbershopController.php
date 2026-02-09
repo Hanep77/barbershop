@@ -30,6 +30,8 @@ class BarbershopController extends Controller
             "phone_number" => ["required", "max:15"],
             "description" => ["nullable"],
             "is_active" => ["nullable"],
+            "latitude" => ["required"],
+            "longitude" => ["required"]
         ]);
 
         $validated["user_id"] = $user->id;

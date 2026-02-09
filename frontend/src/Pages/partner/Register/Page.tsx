@@ -2,12 +2,15 @@
 
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
-import { authServices } from "@/services/auth";
+import { partnerServices } from "@/services/partner";
 import Fetcher from "@/lib/fetcher";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import MapLocation from "./components/MapLocation";
 import LocationInput from "./components/LocationInput";
+import { useState } from "react";
+import type { GeosearchResult } from "@/types/Geosearch";
+import { AxiosError } from "axios";
 
 type RegisterPartnerFormValues = {
   name: string;
@@ -27,33 +30,52 @@ export default function PartnerRegister() {
     defaultValues: { name: "", address: "", phone_number: "", is_active: true },
   });
 
-  const { login, setUser } = useAuth();
+  const [selectedAddress, setSelectedAddress] = useState<GeosearchResult | null>(null);
+
   const navigate = useNavigate();
 
   const onSubmit = async (data: RegisterPartnerFormValues) => {
-    const { url, method } = authServices.login();
+    const { url, method } = partnerServices.register();
+    const updatedData = { ...data, latitude: selectedAddress?.lat, longitude: selectedAddress?.lon };
+
     await Fetcher({
       url,
       method,
-      data,
+      data: updatedData,
     })
       .then((response) => {
         const { data } = response;
-        login(data.token, data.user);
-        setUser(data.user);
+        console.log(data);
         navigate("/dashboard");
       })
       .catch((error) => {
-        if (error instanceof Error) {
-          toast.error(error.message || "Login failed");
-          console.log(error.message);
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data.message || "An error occurred");
+          console.log(error.response);
+          return;
         }
+        toast.error("An error occurred");
+        console.error(error);
       });
   };
 
+  const selectAddress = (address: GeosearchResult) => {
+    setSelectedAddress(address);
+  };
+
+  const updateLatLon = (lat: number, lon: number) => {
+    if (selectedAddress) {
+      setSelectedAddress({
+        ...selectedAddress,
+        lat: lat.toString(),
+        lon: lon.toString(),
+      });
+    }
+  }
+
   return (
     <div className="w-full h-full m-auto text-slate-100 grid place-items-center px-6 py-10">
-      <div className="w-full max-w-md rounded-3xl bg-[#151820] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-7">
+      <div className="w-full max-w-xl rounded-3xl bg-[#151820] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-7">
         <div className="mb-6">
           <div className="text-xl font-bold text-center tracking-[0.25em] text-white/70 mb-8">
             Nephair
@@ -72,7 +94,7 @@ export default function PartnerRegister() {
             <input
               type="text"
               placeholder="Barbershop Name"
-              {...register("name", { required: "name is required" })}
+              {...register("name", { required: "Barbershop Name is required" })}
               className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
             />
             {errors.name && (
@@ -90,7 +112,7 @@ export default function PartnerRegister() {
               type="text"
               placeholder="Barbershop Phone Number"
               {...register("phone_number", {
-                required: "phone number is required",
+                required: "Phone Number is required",
               })}
               className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
             />
@@ -101,11 +123,11 @@ export default function PartnerRegister() {
             )}
           </label>
 
-          <LocationInput />
+          <LocationInput onSelectAddress={selectAddress} register={register} errors={errors?.address} name="address" />
 
           <label className="grid gap-2">
             <span className="text-xs text-white/70">Barbershop Location</span>
-            <MapLocation />
+            <MapLocation lat={Number(selectedAddress?.lat)} lon={Number(selectedAddress?.lon)} updateLatLon={updateLatLon} />
           </label>
 
           <button
@@ -114,15 +136,6 @@ export default function PartnerRegister() {
           >
             Submit Barbershop
           </button>
-          {/* <button
-            onClick={() => {
-              navigate('/register')
-            }}
-              type="submit"
-              className="mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white"
-            >
-              Don't have an account?
-            </button> */}
         </form>
 
         <p className="mt-4 text-[11px] text-white/60">

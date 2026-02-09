@@ -1,26 +1,35 @@
 'use client'
 
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import type { Marker as LeafletMarker } from 'leaflet';
+
 
 
 const center: [number, number] = [-7.356299369134257, 108.2293978319359];
 
-function DraggableMarker() {
+interface DraggableMarkerProps {
+  position: [number, number];
+  onPositionChange?: (position: [number, number]) => void;
+  updateLatLon?: (lat: number, lon: number) => void;
+}
+
+function DraggableMarker({ position, onPositionChange, updateLatLon }: DraggableMarkerProps) {
   const [draggable, setDraggable] = useState(false)
-  const [position, setPosition] = useState(center)
-  const markerRef = useRef(null)
+  const markerRef = useRef<LeafletMarker>(null)
   const eventHandlers = useMemo(
     () => ({
       dragend() {
         const marker = markerRef.current
         if (marker != null) {
-          setPosition(marker.getLatLng())
+          const nextPosition = marker.getLatLng()
+          onPositionChange?.([nextPosition.lat, nextPosition.lng])
+          updateLatLon?.(nextPosition.lat, nextPosition.lng);
         }
       },
     }),
-    [],
+    [onPositionChange, updateLatLon],
   )
   const toggleDraggable = useCallback(() => {
     setDraggable((d) => !d)
@@ -43,10 +52,28 @@ function DraggableMarker() {
   )
 }
 
+function MapUpdater({ position }: { position: [number, number] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView(position)
+  }, [map, position])
+
+  return null
+}
 
 
-export default function MapLocation() {
-  const position = center;
+interface IProps {
+  lat?: number;
+  lon?: number;
+  updateLatLon?: (lat: number, lon: number) => void;
+}
+
+
+export default function MapLocation({ lat, lon, updateLatLon }: IProps) {
+  const position: [number, number] = lat
+    ? [lat, lon ?? center[1]]
+    : center;
 
 
   return (
@@ -58,11 +85,12 @@ export default function MapLocation() {
         style={{ height: "300px", width: "100%" }}
         // zoomControl={false}
       >
+        <MapUpdater position={position} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-       <DraggableMarker />
+        <DraggableMarker position={position} updateLatLon={updateLatLon} />
       </MapContainer>
     </div>
   );
