@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useAuth } from "@/context/AuthContext";
 import { partnerServices } from "@/services/partner";
 import Fetcher from "@/lib/fetcher";
 import { toast } from "sonner";

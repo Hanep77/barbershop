@@ -32,7 +32,7 @@ export default function LocationInput<T extends FieldValues>({
     if (address.trim().length === 0) return;
     try {
       const response = await fetch(
-        `/api/nominatim/search?format=jsonv2&q=${encodeURIComponent(address)}`,
+        `/nominatim/search?format=jsonv2&q=${encodeURIComponent(address)}`,
       );
       if (!response.ok) {
         throw new Error(`Nominatim request failed: ${response.status}`);

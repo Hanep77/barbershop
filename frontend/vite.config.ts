@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     allowedHosts: ["phosphorescently-stretchier-sharyl.ngrok-free.dev"],
     proxy: {
-      "/api/nominatim": {
+      "/nominatim": {
         target: "https://nominatim.openstreetmap.org",
         changeOrigin: true,
         secure: true,
@@ -21,7 +21,7 @@ export default defineConfig({
           "User-Agent": "dawg",
           Referer: "http://localhost:5173",
         },
-        rewrite: (path) => path.replace(/^\/api\/nominatim/, ""),
+        rewrite: (path) => path.replace(/^\/nominatim/, ""),
       },
     },
   },
