@@ -2,13 +2,13 @@
 
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
-import { authServices } from "@/services/auth";
 import Fetcher from "@/lib/fetcher";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { useLoadingBar } from "react-top-loading-bar";
 import { useState } from "react";
 import { AxiosError } from "axios";
+import { authServices } from "@/services/auth";
 
 type LoginFormValues = {
   email: string;
@@ -33,25 +33,26 @@ export default function LoginPage() {
     start();
     setLoading(true);
     const { url, method } = authServices.login();
-    await Fetcher({
-      url,
-      method,
-      data,
-    })
-      .then((response) => {
-        const { data } = response;
-        login(data.token, data.user);
-        navigate('/dashboard');
-      })
-      .catch((error) => {
-        if(error instanceof AxiosError){
-          toast.error(error.response?.data.error || "Login failed");
-          console.log(error.response);
-        }
-      }).finally(() => {
-        complete();
-        setLoading(false);
+    const { url: cookieUrl, method: cookieMethod } = authServices.getCookie();
+
+    try {
+      await Fetcher({ url: cookieUrl, method: cookieMethod });
+      const response = await Fetcher({
+        url,
+        method,
+        data,
       });
+
+      login(response.data.user);
+      navigate("/dashboard");
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message || "Login failed");
+      }
+    } finally {
+      complete();
+      setLoading(false);
+    }
   };
 
   return (

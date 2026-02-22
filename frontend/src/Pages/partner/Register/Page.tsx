@@ -10,6 +10,7 @@ import LocationInput from "./components/LocationInput";
 import { useState } from "react";
 import type { GeosearchResult } from "@/types/Geosearch";
 import { AxiosError } from "axios";
+import { authServices } from "@/services/auth";
 
 type RegisterPartnerFormValues = {
   name: string;
@@ -29,33 +30,42 @@ export default function PartnerRegister() {
     defaultValues: { name: "", address: "", phone_number: "", is_active: true },
   });
 
-  const [selectedAddress, setSelectedAddress] = useState<GeosearchResult | null>(null);
+  const [selectedAddress, setSelectedAddress] =
+    useState<GeosearchResult | null>(null);
 
   const navigate = useNavigate();
 
   const onSubmit = async (data: RegisterPartnerFormValues) => {
     const { url, method } = partnerServices.register();
-    const updatedData = { ...data, latitude: selectedAddress?.lat, longitude: selectedAddress?.lon };
+    const { url: cookieurl, method: cookieMethod } = authServices.getCookie();
 
-    await Fetcher({
-      url,
-      method,
-      data: updatedData,
-    })
-      .then((response) => {
-        const { data } = response;
-        console.log(data);
-        navigate("/dashboard");
+    const updatedData = {
+      ...data,
+      latitude: selectedAddress?.lat,
+      longitude: selectedAddress?.lon,
+    };
+
+    await Fetcher({ url: cookieurl, method: cookieMethod }).then(async () => {
+      await Fetcher({
+        url,
+        method,
+        data: updatedData,
       })
-      .catch((error) => {
-        if (error instanceof AxiosError) {
-          toast.error(error.response?.data.message || "An error occurred");
-          console.log(error.response);
-          return;
-        }
-        toast.error("An error occurred");
-        console.error(error);
-      });
+        .then((response) => {
+          const { data } = response;
+          console.log(data);
+          navigate("/dashboard");
+        })
+        .catch((error) => {
+          if (error instanceof AxiosError) {
+            toast.error(error.response?.data.message || "An error occurred");
+            // console.log(error.response);
+            return;
+          }
+          toast.error("An error occurred");
+          console.error(error);
+        });
+    });
   };
 
   const selectAddress = (address: GeosearchResult) => {
@@ -70,7 +80,7 @@ export default function PartnerRegister() {
         lon: lon.toString(),
       });
     }
-  }
+  };
 
   return (
     <div className="w-full h-full m-auto text-slate-100 grid place-items-center px-6 py-10">
@@ -122,11 +132,20 @@ export default function PartnerRegister() {
             )}
           </label>
 
-          <LocationInput onSelectAddress={selectAddress} register={register} errors={errors?.address} name="address" />
+          <LocationInput
+            onSelectAddress={selectAddress}
+            register={register}
+            errors={errors?.address}
+            name="address"
+          />
 
           <label className="grid gap-2">
             <span className="text-xs text-white/70">Barbershop Location</span>
-            <MapLocation lat={Number(selectedAddress?.lat)} lon={Number(selectedAddress?.lon)} updateLatLon={updateLatLon} />
+            <MapLocation
+              lat={Number(selectedAddress?.lat)}
+              lon={Number(selectedAddress?.lon)}
+              updateLatLon={updateLatLon}
+            />
           </label>
 
           <button

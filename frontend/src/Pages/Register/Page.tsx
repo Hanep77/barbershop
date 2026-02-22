@@ -19,7 +19,7 @@ type RegisterFormValues = {
 };
 
 export default function RegisterPage() {
-  const {login} = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { start, complete } = useLoadingBar();
@@ -29,35 +29,42 @@ export default function RegisterPage() {
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormValues>({
-    defaultValues: { name: "", email: "", password: "", password_confirmation: "", role: "customer" },
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      password_confirmation: "",
+      role: "customer",
+    },
   });
-;
-
-  const {url, method} = authServices.register();
+  const { url, method } = authServices.register();
 
   const onSubmit = async (data: RegisterFormValues) => {
     setLoading(true);
     start();
-    await Fetcher({
-      url,
-      method,
-      data,
-    }).then((response) => {
-      const { data } = response;
-      login(data.token, data.user);
-      toast.success("Registration successful");
-      navigate('/dashboard');
-      // x
-    }).catch((error) => {
-      if(error instanceof AxiosError){
-        toast.error(error.response?.data.error || "Registration failed");
-        console.log(error.response);
+    const { url: cookieUrl, method: cookieMethod } = authServices.getCookie();
+
+    try {
+      await Fetcher({ url: cookieUrl, method: cookieMethod }).then(async () => {
+        await Fetcher({
+          url,
+          method,
+          data,
+        }).then((res) => {
+          const { data } = res.data;
+          login(data.user);
+          toast.success("Registration successful");
+          navigate("/dashboard");
+        });
+      });
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message || "Registration failed");
       }
-      console.log(error)
-    }).finally(() => {
+    } finally {
       complete();
       setLoading(false);
-    });
+    }
     // navigate("/login");
   };
 
@@ -95,7 +102,9 @@ export default function RegisterPage() {
             <input
               type="email"
               placeholder="michael@email.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email", {
+                required: "Email is required",
+              })}
               className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
             />
             {errors.email && (
@@ -110,7 +119,9 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="••••••••"
-              {...register("password", { required: "Password is required" })}
+              {...register("password", {
+                required: "Password is required",
+              })}
               className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
             />
             {errors.password && (
@@ -125,7 +136,9 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="••••••••"
-              {...register("password_confirmation", { required: "Password confirmation is required" })}
+              {...register("password_confirmation", {
+                required: "Password confirmation is required",
+              })}
               className="w-full rounded-xl bg-[#0f1218] border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
             />
             {errors.password_confirmation && (
@@ -136,8 +149,11 @@ export default function RegisterPage() {
           </label>
 
           <button
-                disabled={loading}
-            className={`mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-white ${loading ? "cursor-not-allowed opacity-50" : ""}`}
+            disabled={loading}
+            className={`mt-1 w-full rounded-2xl bg-slate-100 px-4 py-3 text-sm
+                    font-semibold text-slate-900 transition hover:bg-white ${
+                      loading ? "cursor-not-allowed opacity-50" : ""
+                    }`}
           >
             Register
           </button>
