@@ -11,6 +11,7 @@ import { useState } from "react";
 import type { GeosearchResult } from "@/types/Geosearch";
 import { AxiosError } from "axios";
 import { authServices } from "@/services/auth";
+import { useAuth } from "@/context/AuthContext";
 
 type RegisterPartnerFormValues = {
   name: string;
@@ -35,6 +36,8 @@ export default function PartnerRegister() {
 
   const navigate = useNavigate();
 
+  const { login } = useAuth();
+
   const onSubmit = async (data: RegisterPartnerFormValues) => {
     const { url, method } = partnerServices.register();
     const { url: cookieurl, method: cookieMethod } = authServices.getCookie();
@@ -53,7 +56,7 @@ export default function PartnerRegister() {
       })
         .then((response) => {
           const { data } = response;
-          console.log(data);
+          login(data.updatedUser);
           navigate("/dashboard");
         })
         .catch((error) => {

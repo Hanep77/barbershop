@@ -1,15 +1,13 @@
 import { Outlet } from "react-router";
-import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 
 export default function DefaultLayout() {
   return (
-    <div className="min-h-screen bg-gray-700 flex flex-col">
-      <Navbar />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
-      <Footer />
+    <div className="h-screen bg-black flex flex-col">
+      <div className="p-2  top-0">
+        <Navbar />
+      </div>
+      <Outlet />
     </div>
   );
 }

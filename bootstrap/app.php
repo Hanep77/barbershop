@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Http\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(function (Request $request) {
             return $request->is('api/*') ? null : '/login';
         });
+        $middleware->alias([
+            'role' => RoleMiddleware::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->renderable(function (NotFoundHttpException $e, $request) {

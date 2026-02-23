@@ -4,6 +4,8 @@ import { createContext, useState, useContext } from "react";
 import Fetcher from "@/lib/fetcher";
 import { authServices } from "@/services/auth";
 import type { User } from "@/types/User";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -41,19 +43,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = (user: User) => {
     localStorage.setItem("auth_user", JSON.stringify(user));
     setUser(user);
-    // window.location.href = '/dashboard';
   };
 
   const logout = async () => {
     const { url: cookieUrl, method: cookieMethod } = authServices.getCookie();
     const { url, method } = authServices.logout();
 
-    await Fetcher({ url: cookieUrl, method: cookieMethod });
-    await Fetcher({ url, method });
-
-    localStorage.removeItem("auth_user");
-    setUser(null);
-    window.location.href = "/";
+    await Fetcher({ url: cookieUrl, method: cookieMethod }).then(async () => {
+      await Fetcher({ url, method })
+        .then(() => {
+          localStorage.removeItem("auth_user");
+          setUser(null);
+          window.location.href = "/";
+        })
+        .catch((error) => {
+          if (error instanceof AxiosError) {
+            toast.error(error?.response?.data.message);
+          }
+        });
+    });
   };
 
   return (

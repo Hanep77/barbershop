@@ -1,9 +1,9 @@
 "use client";
 
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
 };
@@ -17,7 +17,7 @@ export const calculateDistance = (
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number => {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -34,11 +34,11 @@ export const calculateDistance = (
 
 export const isBarberShopOpen = (
   openTime: string,
-  closeTime: string
+  closeTime: string,
 ): boolean => {
   const now = new Date();
-  const [openHour, openMin] = openTime.split(':').map(Number);
-  const [closeHour, closeMin] = closeTime.split(':').map(Number);
+  const [openHour, openMin] = openTime.split(":").map(Number);
+  const [closeHour, closeMin] = closeTime.split(":").map(Number);
 
   const openDate = new Date();
   openDate.setHours(openHour, openMin, 0, 0);
@@ -50,10 +50,10 @@ export const isBarberShopOpen = (
 };
 
 export const getRatingColor = (rating: number): string => {
-  if (rating >= 4.5) return 'text-green-600';
-  if (rating >= 3.5) return 'text-yellow-600';
-  if (rating >= 2.5) return 'text-orange-600';
-  return 'text-red-600';
+  if (rating >= 4.5) return "text-green-600";
+  if (rating >= 3.5) return "text-yellow-600";
+  if (rating >= 2.5) return "text-orange-600";
+  return "text-red-600";
 };
 
 export const getPriceRange = (minPrice: number, maxPrice: number): string => {
@@ -65,16 +65,17 @@ export const getPriceRange = (minPrice: number, maxPrice: number): string => {
 
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  return text.substring(0, maxLength) + "...";
 };
 
 export const clearSession = () => {
-  localStorage.removeItem('auth_token');
-}
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_user");
+};
 
 export function toParagraphCase(str: string) {
   return str
-    .split(' ') // Split the string into an array of words based on spaces
+    .split(" ") // Split the string into an array of words based on spaces
     .map((word, index) => {
       if (index === 0) {
         return word.toUpperCase();
@@ -82,5 +83,5 @@ export function toParagraphCase(str: string) {
       // Capitalize the first letter of subsequent words and lowercase the rest
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
-    .join(''); // Join the words back into a single string without spaces
+    .join(""); // Join the words back into a single string without spaces
 }

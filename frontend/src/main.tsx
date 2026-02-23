@@ -10,7 +10,6 @@ import ProtectedLayout from "./Layouts/ProtectedLayout";
 import PartnerDashboard from "./Pages/partner/Dashboard/Page";
 import LoginPage from "./Pages/Login/Page";
 import RegisterPage from "./Pages/Register/Page";
-import AuthLayout from "./Layouts/AuthLayout";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import PartnerRegister from "./Pages/partner/Register/Page";
@@ -25,7 +24,7 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
             </Route>
-            <Route element={<AuthLayout />}>
+            <Route element={<DefaultLayout />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
             </Route>

@@ -10,7 +10,8 @@ class BarbershopController extends Controller
 {
     public function index()
     {
-        return Barbershop::all();
+        $barbershops = Barbershop::all();
+        return response()->json($barbershops, 200);
     }
 
     public function store(Request $request)
@@ -43,7 +44,7 @@ class BarbershopController extends Controller
             ]);
         }
 
-        return response()->json($barbershop);
+        return response()->json(['barbershop' => $barbershop, 'updatedUser' => $user]);
     }
 
     public function show(Barbershop $barbershop)

@@ -22,6 +22,10 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
     Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);
 
+    Route::middleware("role:barbershop")->prefix('/partner')->group(function () {
+        Route::get('/barbershop', [BarbershopController::class, 'index']);
+    });
+
     Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
     Route::post("/barbershop/{barbershop}/services", [ServiceController::class, "store"]);
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);

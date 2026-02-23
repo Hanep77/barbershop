@@ -9,7 +9,7 @@ export default function ProtectedLayout() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-700">
+      <div className="min-h-screen flex flex-col bg-black">
         <Navbar />
         <main className="flex-grow grid place-items-center">
           <div className="text-center">
@@ -24,9 +24,9 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-700">
+    <div className="min-h-screen flex flex-col bg-black text-white">
       <Navbar />
-      <div className="container m-auto">
+      <div className="container">
         <Outlet />
       </div>
     </div>

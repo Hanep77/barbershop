@@ -3,3 +3,8 @@
 .no-scrollbar {
     scrollbar-width: none;
 }
+
+
+body {
+    background-color: black;
+}

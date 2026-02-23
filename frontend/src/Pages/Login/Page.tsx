@@ -56,8 +56,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full h-full m-auto text-slate-100 grid place-items-center px-6 py-10">
-      <div className="w-full max-w-md rounded-3xl bg-[#151820] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-7">
+    <div className=" w-full flex items-center justify-center px-6 py-10 text-slate-100 flex m-auto ">
+      <div className="w-full h-full max-w-md rounded-3xl bg-[#151820] border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-7 m-auto">
         <div className="mb-6">
           <div className="text-xl font-bold text-center tracking-[0.25em] text-white/70 mb-8">
             Nephair
