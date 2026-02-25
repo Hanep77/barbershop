@@ -1,17 +1,11 @@
 "use client";
 
 import { NavLink } from "react-router";
-import { Scissors } from "lucide-react";
+import { Scissors, MenuIcon, XIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLoadingBar } from "react-top-loading-bar";
 import { useLocation } from "react-router";
 import { useSidebarContext } from "@/context/SidebarContext";
-
-// interface NavItemProps {
-//   name: string;
-//   link: string;
-//   isAdminFeature: boolean;
-// }
 
 export default function Navbar() {
   const { isAuthenticated, logout, user } = useAuth();
@@ -21,22 +15,11 @@ export default function Navbar() {
 
   const { pathname } = useLocation();
 
-  // const navItems: NavItemProps[] = [
-  //   {
-  //     name: "Dashboard",
-  //     link: "/dashboard",
-  //     isAdminFeature: true,
-  //   },
-  //   {
-  //     name: "Services",
-  //     link: "/services",
-  //     isAdminFeature: true,
-  //   },
-  // ];
-
   return (
     <nav className="bg-[#151820]/70  backdrop-blur text-white shadow-sm position-sticky top-0 w-full z-20">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div
+        className={`lg:mx-10 md:mx-15 sm:mx-10 mx-5 px-4 py-4 flex items-center justify-between`}
+      >
         <NavLink
           to="/"
           replace
@@ -56,7 +39,7 @@ export default function Navbar() {
           <span className="font-bold text-xl">BarberFinder</span>
         </NavLink>
 
-        <div className="xl:flex lg:flex md:flex hidden items-center gap-4">
+        <div className="xl:flex lg:flex hidden items-center gap-4">
           {/* {JSON.stringify(user)} */}
           {isAuthenticated ? (
             <>
@@ -133,12 +116,12 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="xl:hidden lg:hidden md:hidden block items-center gap-4">
+        <div className="xl:hidden lg:hidden block items-center gap-4">
           <button
             className="border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-white transition-all transition-duration-300 p-3 rounded-lg"
             onClick={() => setOpen(!isOpen)}
           >
-            Toggle
+            {isOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
           </button>
         </div>
       </div>

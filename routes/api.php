@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BarbershopController;
+use App\Http\Controllers\PartnerBarbershopController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -23,11 +24,12 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);
 
     Route::middleware("role:barbershop")->prefix('/partner')->group(function () {
-        Route::get('/barbershop', [BarbershopController::class, 'index']);
+        Route::get('/barbershop', [PartnerBarbershopController::class, 'index']);
+        Route::get("/barbershop/services", [ServiceController::class, "index"]);
+        Route::post("/barbershop/services", [ServiceController::class, "store"]);
     });
 
     Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
-    Route::post("/barbershop/{barbershop}/services", [ServiceController::class, "store"]);
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);
     Route::delete("/barbershop/services/{service}", [ServiceController::class, "destroy"]);
 });

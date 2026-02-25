@@ -1,10 +1,16 @@
 export interface Service {
   id?: string;
-  barbershopId: string;
+  barbershop_id: string;
   name: string;
   price: number;
-  durationMinutes: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  duration_minutes: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
+
+export type CreateServiceFormValues = {
+  name: string;
+  price: number;
+  duration_minutes: number;
+};

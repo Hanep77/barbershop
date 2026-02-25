@@ -2,23 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Barbershop;
-use App\Models\Transaction;
+use App\Models\Rating;
+use App\Http\Requests\StoreRatingRequest;
+use App\Http\Requests\UpdateRatingRequest;
 
-
-class PartnerBarbershopController extends Controller
+class RatingController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
-
-        if ($user->barbershop()->exists()) {
-            return response()->json(['message' => 'API Accessible'], 200);
-        }
+        //
     }
 
     /**
@@ -32,7 +27,7 @@ class PartnerBarbershopController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreRatingRequest $request)
     {
         //
     }
@@ -40,7 +35,7 @@ class PartnerBarbershopController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Rating $rating)
     {
         //
     }
@@ -48,7 +43,7 @@ class PartnerBarbershopController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Rating $rating)
     {
         //
     }
@@ -56,7 +51,7 @@ class PartnerBarbershopController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateRatingRequest $request, Rating $rating)
     {
         //
     }
@@ -64,7 +59,7 @@ class PartnerBarbershopController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Rating $rating)
     {
         //
     }

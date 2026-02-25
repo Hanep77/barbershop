@@ -13,6 +13,9 @@ import RegisterPage from "./Pages/Register/Page";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import PartnerRegister from "./Pages/partner/Register/Page";
+import Transaction from "./Pages/partner/Transaction/Page";
+import Services from "@/Pages/partner/Services/Page";
+
 import { LoadingBarContainer } from "react-top-loading-bar";
 
 createRoot(document.getElementById("root")!).render(
@@ -31,6 +34,8 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<PartnerDashboard />} />
               <Route path="/partner-register" element={<PartnerRegister />} />
+              <Route path="/transactions" element={<Transaction />} />
+              <Route path="/partner-services" element={<Services />} />
             </Route>
             {/* </Route> */}
             {/* <Route element={<GuestLayout />}> */}

@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { Outlet } from "react-router";
 import Navbar from "@/components/Navbar";
+import Sidebar from "@/Pages/partner/components/Sidebar";
 
 export default function ProtectedLayout() {
   const { isAuthenticated } = useAuth();
@@ -26,8 +27,11 @@ export default function ProtectedLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
       <Navbar />
-      <div className="container">
-        <Outlet />
+      <div className="flex flex-row w-full">
+        <Sidebar />
+        <div className="p-5 w-full">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

@@ -64,4 +64,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Barbershop::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }

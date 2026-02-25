@@ -9,13 +9,17 @@ use Illuminate\Support\Facades\Gate;
 
 class ServiceController extends Controller
 {
-    public function index(Barbershop $barbershop)
+    public function index(Request $request)
     {
-        return response()->json($barbershop->services);
+        $barbershop = $request->user()->barbershop;
+
+        return response()->json($barbershop->services, 200);
     }
 
-    public function store(Request $request, Barbershop $barbershop)
+    public function store(Request $request)
     {
+        $barbershop = $request->user()->barbershop;
+
         Gate::authorize("update", $barbershop);
 
         $validated = $request->validate([
