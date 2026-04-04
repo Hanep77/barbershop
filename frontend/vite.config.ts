@@ -1,28 +1,22 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import path from "path";
+import { defineConfig } from 'vite'
+import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    // The React and Tailwind plugins are both required for Make, even if
+    // Tailwind is not being actively used – do not remove them
+    react(),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      // Alias @ to the src directory
+      '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    allowedHosts: ["phosphorescently-stretchier-sharyl.ngrok-free.dev"],
-    proxy: {
-      "/nominatim": {
-        target: "https://nominatim.openstreetmap.org",
-        changeOrigin: true,
-        secure: true,
-        headers: {
-          "User-Agent": "dawg",
-          Referer: "http://localhost:5173",
-        },
-        rewrite: (path) => path.replace(/^\/nominatim/, ""),
-      },
-    },
-  },
-});
+
+  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
+  assetsInclude: ['**/*.svg', '**/*.csv'],
+})
