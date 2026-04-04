@@ -1,0 +1,439 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { Calendar, Clock, User, Scissors, CheckCircle, ChevronRight, MapPin } from "lucide-react";
+import { Calendar as CalendarComponent } from "../components/ui/calendar";
+import {
+  getBarbershopById,
+  getServicesByBarbershopId,
+  getBarbersByBarbershopId,
+} from "../data/marketplace-data";
+
+export function Booking() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const barbershopId = parseInt(searchParams.get("barbershop_id") || "0");
+  const preSelectedService = searchParams.get("service") || "";
+  const preSelectedBarber = searchParams.get("barber") || "";
+
+  const [step, setStep] = useState(1);
+  const [selectedService, setSelectedService] = useState(preSelectedService);
+  const [selectedBarber, setSelectedBarber] = useState(preSelectedBarber);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedTime, setSelectedTime] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+
+  const barbershop = getBarbershopById(barbershopId);
+  const services = getServicesByBarbershopId(barbershopId);
+  const barbers = getBarbersByBarbershopId(barbershopId);
+
+  // Redirect if no barbershop ID
+  useEffect(() => {
+    if (!barbershopId || !barbershop) {
+      navigate("/");
+    }
+  }, [barbershopId, barbershop, navigate]);
+
+  if (!barbershop) {
+    return null;
+  }
+
+  const timeSlots = [
+    "9:00 AM",
+    "9:30 AM",
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
+    "1:00 PM",
+    "1:30 PM",
+    "2:00 PM",
+    "2:30 PM",
+    "3:00 PM",
+    "3:30 PM",
+    "4:00 PM",
+    "4:30 PM",
+    "5:00 PM",
+    "5:30 PM",
+    "6:00 PM",
+    "6:30 PM",
+    "7:00 PM",
+  ];
+
+  const handleBooking = () => {
+    // In a real app, this would submit to a backend
+    navigate("/my-bookings");
+  };
+
+  const canProceed = () => {
+    switch (step) {
+      case 1:
+        return selectedService !== "";
+      case 2:
+        return selectedBarber !== "";
+      case 3:
+        return selectedDate !== undefined && selectedTime !== "";
+      case 4:
+        return customerName !== "" && customerEmail !== "" && customerPhone !== "";
+      default:
+        return false;
+    }
+  };
+
+  const steps = [
+    { number: 1, label: "Service", icon: Scissors },
+    { number: 2, label: "Barber", icon: User },
+    { number: 3, label: "Date & Time", icon: Calendar },
+    { number: 4, label: "Details", icon: CheckCircle },
+  ];
+
+  const selectedServiceData = services.find((s) => s.name === selectedService);
+
+  return (
+    <div className="min-h-screen py-16">
+      <div className="container mx-auto px-6 max-w-6xl">
+        {/* Barbershop Header */}
+        <div className="mb-8 text-center">
+          <h1 className="font-bold text-4xl text-foreground mb-2">
+            Book at {barbershop.name}
+          </h1>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            <span className="font-light">{barbershop.location}</span>
+          </div>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="mb-12">
+          <div className="flex items-center justify-center gap-2 md:gap-4">
+            {steps.map((s, index) => {
+              const Icon = s.icon;
+              return (
+                <div key={s.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${
+                        step >= s.number
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span
+                      className={`text-sm font-light hidden md:block ${
+                        step >= s.number ? "text-foreground" : "text-muted-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <ChevronRight className="w-5 h-5 text-muted-foreground mx-2 md:mx-4" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-xl p-8 md:p-12 border border-border">
+          {/* Step 1: Select Service */}
+          {step === 1 && (
+            <div>
+              <h2 className="font-bold text-3xl text-card-foreground mb-3">
+                Choose Your Service
+              </h2>
+              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
+                Select from services offered at {barbershop.name}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {services.map((service) => (
+                  <button
+                    key={service.id}
+                    onClick={() => setSelectedService(service.name)}
+                    className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      selectedService === service.name
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <h3 className="font-bold text-lg text-card-foreground mb-2">
+                      {service.name}
+                    </h3>
+                    <div className="flex items-center gap-3 text-muted-foreground mb-2">
+                      <span className="font-bold text-primary">{service.price}</span>
+                      <span className="font-light">{service.duration}</span>
+                    </div>
+                    <p className="text-muted-foreground font-light text-sm leading-relaxed">
+                      {service.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Select Barber */}
+          {step === 2 && (
+            <div>
+              <h2 className="font-bold text-3xl text-card-foreground mb-3">
+                Choose Your Barber
+              </h2>
+              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
+                Select your preferred barber at {barbershop.name} or choose "No Preference"
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setSelectedBarber("No Preference")}
+                  className={`p-6 rounded-xl border-2 text-left transition-all ${
+                    selectedBarber === "No Preference"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <h3 className="font-bold text-lg text-card-foreground mb-1">
+                    No Preference
+                  </h3>
+                  <p className="text-muted-foreground font-light text-sm">
+                    Next available barber
+                  </p>
+                </button>
+
+                {barbers.map((barber) => (
+                  <button
+                    key={barber.id}
+                    onClick={() => setSelectedBarber(barber.name)}
+                    className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      selectedBarber === barber.name
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <h3 className="font-bold text-lg text-card-foreground mb-1">
+                      {barber.name}
+                    </h3>
+                    <p className="text-muted-foreground font-light text-sm mb-2">
+                      {barber.title}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {barber.specialties.slice(0, 2).map((specialty) => (
+                        <span
+                          key={specialty}
+                          className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                        >
+                          {specialty}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Select Date & Time */}
+          {step === 3 && (
+            <div>
+              <h2 className="font-bold text-3xl text-card-foreground mb-3">
+                Pick Date & Time
+              </h2>
+              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
+                Choose your preferred appointment date and time
+              </p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Calendar */}
+                <div>
+                  <h3 className="font-bold text-card-foreground mb-4">
+                    Select Date
+                  </h3>
+                  <div className="flex justify-center">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) =>
+                        date < new Date() || date < new Date("1900-01-01")
+                      }
+                      className="rounded-xl border border-border"
+                    />
+                  </div>
+                </div>
+
+                {/* Time Slots */}
+                <div>
+                  <h3 className="font-bold text-card-foreground mb-4">
+                    Select Time
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-2">
+                    {timeSlots.map((time) => (
+                      <button
+                        key={time}
+                        onClick={() => setSelectedTime(time)}
+                        disabled={!selectedDate}
+                        className={`p-3 rounded-lg border text-sm transition-all ${
+                          selectedTime === time
+                            ? "border-primary bg-primary text-primary-foreground font-bold"
+                            : !selectedDate
+                            ? "border-border text-muted-foreground cursor-not-allowed opacity-50"
+                            : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
+                  {!selectedDate && (
+                    <p className="text-muted-foreground text-sm font-light mt-4">
+                      Please select a date first
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Customer Details */}
+          {step === 4 && (
+            <div>
+              <h2 className="font-bold text-3xl text-card-foreground mb-3">
+                Your Details
+              </h2>
+              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
+                Enter your information to confirm your booking
+              </p>
+
+              <div className="max-w-xl space-y-6">
+                <div>
+                  <label className="block text-card-foreground font-bold mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-card-foreground font-bold mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-card-foreground font-bold mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                {/* Booking Summary */}
+                <div className="mt-8 p-6 bg-muted rounded-xl border border-border">
+                  <h3 className="font-bold text-foreground mb-4">
+                    Booking Summary
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
+                      <span className="text-muted-foreground font-light">Barbershop:</span>
+                      <div className="text-right">
+                        <span className="text-foreground font-bold block">
+                          {barbershop.name}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-light">
+                          {barbershop.location}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-px bg-border" />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground font-light">Service:</span>
+                      <span className="text-foreground font-normal">{selectedService}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground font-light">Barber:</span>
+                      <span className="text-foreground font-normal">{selectedBarber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground font-light">Date:</span>
+                      <span className="text-foreground font-normal">
+                        {selectedDate?.toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground font-light">Time:</span>
+                      <span className="text-foreground font-normal">{selectedTime}</span>
+                    </div>
+                    {selectedServiceData && (
+                      <>
+                        <div className="h-px bg-border" />
+                        <div className="flex justify-between items-center">
+                          <span className="text-foreground font-bold">Total:</span>
+                          <span className="text-primary font-bold text-xl">
+                            {selectedServiceData.price}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-4 mt-12">
+            {step > 1 && (
+              <button
+                onClick={() => setStep(step - 1)}
+                className="px-6 py-3 border border-border rounded-lg text-card-foreground hover:bg-muted transition-colors"
+              >
+                Back
+              </button>
+            )}
+            
+            <button
+              onClick={() => {
+                if (step < 4) {
+                  setStep(step + 1);
+                } else {
+                  handleBooking();
+                }
+              }}
+              disabled={!canProceed()}
+              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto ${
+                canProceed()
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              {step === 4 ? "Confirm Booking" : "Continue"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
