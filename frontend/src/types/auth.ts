@@ -16,6 +16,7 @@ export interface AuthState {
 
   // --- Actions ---
   init: () => Promise<void>;
+  setUser: (user: User | null) => void;
   register: (name: string, email: string, role: string, password: string, password_confirmation: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;

@@ -38,6 +38,8 @@ const useAuthStore = create<AuthState>()(
         }
       },
 
+      setUser: (user) => set({ user }),
+
       register: async (name: string, email: string, role: string, password: string, password_confirmation: string): Promise<void> => {
         set({ loading: true, error: null });
         try {

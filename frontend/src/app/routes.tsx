@@ -17,6 +17,7 @@ import { AdminBarbers } from "./pages/admin/barbers";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
 import GuestOnly from "../middleware/GuestOnly";
+import AuthCallback from "./pages/auth-callback";
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
         path: "/register",
         Component: Register,
       },
+      {
+        path: '/auth/callback',
+        element: <AuthCallback />
+      }
     ]
   },
   {

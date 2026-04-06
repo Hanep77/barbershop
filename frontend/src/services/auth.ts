@@ -15,3 +15,8 @@ export const login = async (email: string, password: string) => {
 
 export const logout = () => api.post('/api/logout');
 export const getUser = () => api.get('/api/me');
+
+export const getGoogleRedirectUrl = async () => {
+  const { data } = await api.get('/auth/google/redirect');
+  return data;
+};

@@ -4,6 +4,7 @@ import { Scissors, Eye, EyeOff } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import useAuthStore from "../../store/authStore";
 import type { LoginErrors, LoginForm } from "../../types/auth";
+import { getGoogleRedirectUrl } from "../../services/auth";
 
 export function Login() {
   const navigate = useNavigate();
@@ -33,13 +34,11 @@ export function Login() {
         | LoginErrors;
       setFieldErrors(laravelErrors);
     }
-    // In a real app, this would authenticate with a backend
-    // navigate("/");
   };
 
-  const handleGoogleLogin = () => {
-    // In a real app, this would trigger Google OAuth
-    navigate("/");
+  const handleGoogleLogin = async () => {
+    const url = await getGoogleRedirectUrl();
+    window.location.href = url;
   };
 
   return (
