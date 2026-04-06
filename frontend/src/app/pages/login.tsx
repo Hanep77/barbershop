@@ -1,18 +1,40 @@
-import { useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Scissors, Eye, EyeOff } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import useAuthStore from "../../store/authStore";
+import type { LoginErrors, LoginForm } from "../../types/auth";
 
 export function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<LoginErrors>({});
+  const { login, loading } = useAuthStore();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: SubmitEvent) => {
     e.preventDefault();
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    console.log(formData.get("name"));
+
+    const user = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+    } as LoginForm;
+
+    try {
+      await login(
+        user.email,
+        user.password,
+      );
+      navigate("/");
+    } catch (err: unknown) {
+      const laravelErrors = (err as any)?.response?.data?.errors as
+        | LoginErrors;
+      setFieldErrors(laravelErrors);
+    }
     // In a real app, this would authenticate with a backend
-    navigate("/");
+    // navigate("/");
   };
 
   const handleGoogleLogin = () => {
@@ -111,22 +133,24 @@ export function Login() {
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Field */}
             <div>
+              {fieldErrors.email && <p className="text-red-500 italic">{fieldErrors.email}</p>}
               <label htmlFor="email" className="block font-bold text-card-foreground mb-2">
                 Email Address
               </label>
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
                 placeholder="john@example.com"
                 className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 required
               />
             </div>
 
+
             {/* Password Field */}
             <div>
+              {fieldErrors.password && <p className="text-red-500 italic">{fieldErrors.password}</p>}
               <label htmlFor="password" className="block font-bold text-card-foreground mb-2">
                 Password
               </label>
@@ -134,9 +158,8 @@ export function Login() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  name="password"
+                  placeholder="Create a strong password"
                   className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all pr-12"
                   required
                 />
@@ -169,7 +192,7 @@ export function Login() {
               type="submit"
               className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
             >
-              Log In
+              {loading ? "Loading..." : "Log In"}
             </button>
           </form>
 

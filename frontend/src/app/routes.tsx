@@ -16,15 +16,21 @@ import { AdminServices } from "./pages/admin/services";
 import { AdminBarbers } from "./pages/admin/barbers";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
+import GuestOnly from "../middleware/GuestOnly";
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
-    Component: Login,
-  },
-  {
-    path: "/register",
-    Component: Register,
+    Component: GuestOnly,
+    children: [
+      {
+        path: "/login",
+        Component: Login,
+      },
+      {
+        path: "/register",
+        Component: Register,
+      },
+    ]
   },
   {
     path: "/admin",

@@ -3,11 +3,17 @@ import { Scissors, Calendar, Search, Menu, X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { FloatingChatButton } from "./floating-chat-button";
 import { SmartChatbotWidget } from "./smart-chatbot-widget";
+import useAuthStore from "../../store/authStore";
 
 export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    await logout();
+  }
 
   const navItems = [
     { path: "/", label: "Home", icon: Scissors },
@@ -21,7 +27,7 @@ export function Layout() {
     if (location.pathname === "/search") {
       return { type: "search" as const };
     }
-    
+
     const barbershopMatch = location.pathname.match(/\/barbershop\/(\d+)/);
     if (barbershopMatch) {
       return {
@@ -62,11 +68,10 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2 transition-colors ${
-                      isActive(item.path)
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`flex items-center gap-2 transition-colors ${isActive(item.path)
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-normal">{item.label}</span>
@@ -77,18 +82,24 @@ export function Layout() {
 
             {/* Auth Buttons (Desktop) */}
             <div className="hidden md:flex items-center gap-4">
-              <Link
-                to="/login"
-                className="px-6 py-2.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Sign Up
-              </Link>
+              {
+                user ?
+                  <button className="bg-red-500 py-2 px-4 rounded-md cursor-pointer" onClick={handleLogout}>Logout</button> :
+                  <>
+                    <Link
+                      to="/login"
+                      className="px-6 py-2.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+              }
             </div>
 
             {/* Mobile Menu Button */}
@@ -114,11 +125,10 @@ export function Layout() {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      isActive(item.path)
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.label}</span>

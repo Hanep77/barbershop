@@ -1,28 +1,46 @@
-import { useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Scissors, Eye, EyeOff, User, Building2 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import useAuthStore from "../../store/authStore";
+import type { RegisterErrors, RegisterForm } from "../../types/auth";
 
 export function Register() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"customer" | "owner">("customer");
+  const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({});
+  const { register, loading } = useAuthStore();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: SubmitEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
 
-    // In a real app, this would register with a backend
-    navigate("/");
+    const formData = new FormData(e.target as HTMLFormElement);
+    console.log(formData.get("name"));
+
+    const user = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      role: role,
+      password: formData.get("password"),
+      password_confirmation: formData.get("password_confirmation"),
+    } as RegisterForm;
+
+    try {
+      await register(
+        user.name,
+        user.email,
+        user.role,
+        user.password,
+        user.password_confirmation,
+      );
+      navigate("/");
+    } catch (err: unknown) {
+      const laravelErrors = (err as any)?.response?.data?.errors as
+        | RegisterErrors;
+      setFieldErrors(laravelErrors);
+    }
   };
 
   return (
@@ -113,17 +131,18 @@ export function Register() {
             </p>
           </div>
 
+
           <form onSubmit={handleRegister} className="space-y-6">
             {/* Full Name Field */}
             <div>
+              {fieldErrors.name && <p className="text-red-500 italic">{fieldErrors.name}</p>}
               <label htmlFor="fullName" className="block font-bold text-card-foreground mb-2">
                 Full Name
               </label>
               <input
                 id="fullName"
                 type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                name="name"
                 placeholder="John Doe"
                 className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 required
@@ -132,14 +151,14 @@ export function Register() {
 
             {/* Email Field */}
             <div>
+              {fieldErrors.email && <p className="text-red-500 italic">{fieldErrors.email}</p>}
               <label htmlFor="email" className="block font-bold text-card-foreground mb-2">
                 Email Address
               </label>
               <input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
                 placeholder="john@example.com"
                 className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 required
@@ -148,6 +167,7 @@ export function Register() {
 
             {/* Password Field */}
             <div>
+              {fieldErrors.password && <p className="text-red-500 italic">{fieldErrors.password}</p>}
               <label htmlFor="password" className="block font-bold text-card-foreground mb-2">
                 Password
               </label>
@@ -155,8 +175,7 @@ export function Register() {
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  name="password"
                   placeholder="Create a strong password"
                   className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all pr-12"
                   required
@@ -184,8 +203,7 @@ export function Register() {
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  name="password_confirmation"
                   placeholder="Re-enter your password"
                   className="w-full px-4 py-4 rounded-lg border border-border bg-white text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all pr-12"
                   required
@@ -213,18 +231,15 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("customer")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    role === "customer"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${role === "customer"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                    }`}
                 >
-                  <User className={`w-6 h-6 mx-auto mb-2 ${
-                    role === "customer" ? "text-primary" : "text-muted-foreground"
-                  }`} />
-                  <p className={`font-bold text-sm ${
-                    role === "customer" ? "text-card-foreground" : "text-muted-foreground"
-                  }`}>
+                  <User className={`w-6 h-6 mx-auto mb-2 ${role === "customer" ? "text-primary" : "text-muted-foreground"
+                    }`} />
+                  <p className={`font-bold text-sm ${role === "customer" ? "text-card-foreground" : "text-muted-foreground"
+                    }`}>
                     Customer
                   </p>
                 </button>
@@ -232,18 +247,15 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("owner")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    role === "owner"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${role === "owner"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                    }`}
                 >
-                  <Building2 className={`w-6 h-6 mx-auto mb-2 ${
-                    role === "owner" ? "text-primary" : "text-muted-foreground"
-                  }`} />
-                  <p className={`font-bold text-sm ${
-                    role === "owner" ? "text-card-foreground" : "text-muted-foreground"
-                  }`}>
+                  <Building2 className={`w-6 h-6 mx-auto mb-2 ${role === "owner" ? "text-primary" : "text-muted-foreground"
+                    }`} />
+                  <p className={`font-bold text-sm ${role === "owner" ? "text-card-foreground" : "text-muted-foreground"
+                    }`}>
                     Barbershop Owner
                   </p>
                 </button>
@@ -255,7 +267,8 @@ export function Register() {
               type="submit"
               className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
             >
-              Create Account
+              {loading ? "Loading..." : "Create Account"}
+
             </button>
           </form>
 
