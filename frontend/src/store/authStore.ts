@@ -1,12 +1,12 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { AuthState, User } from '../types/auth';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { AuthState, User } from "../types/auth";
 import {
   getUser,
   login as loginSvc,
   logout as logoutSvc,
   register as registerSvc,
-} from '../services/auth';
+} from "../services/auth";
 
 const useAuthStore = create<AuthState>()(
   persist(
@@ -40,16 +40,29 @@ const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user }),
 
-      register: async (name: string, email: string, role: string, password: string, password_confirmation: string): Promise<void> => {
+      register: async (
+        name: string,
+        email: string,
+        role: string,
+        password: string,
+        password_confirmation: string,
+      ): Promise<void> => {
         set({ loading: true, error: null });
         try {
-          const res = await registerSvc(name, email, role, password, password_confirmation);
+          const res = await registerSvc(
+            name,
+            email,
+            role,
+            password,
+            password_confirmation,
+          );
+          console.log(res.data);
           set({ user: res.data.user as User });
         } catch (err: unknown) {
           const message =
             err instanceof Error
-              ? (err as any).response?.data?.message ?? err.message
-              : 'Registration failed';
+              ? ((err as any).response?.data?.message ?? err.message)
+              : "Registration failed";
           set({ error: message });
           throw err;
         } finally {
@@ -65,8 +78,9 @@ const useAuthStore = create<AuthState>()(
         } catch (err: unknown) {
           const message =
             err instanceof Error
-              ? (err as any).response?.data?.errors?.email?.[0] ?? 'Login failed'
-              : 'Login failed';
+              ? ((err as any).response?.data?.errors?.email?.[0] ??
+                "Login failed")
+              : "Login failed";
           set({ error: message });
           throw err;
         } finally {
@@ -86,12 +100,12 @@ const useAuthStore = create<AuthState>()(
       clearError: (): void => set({ error: null }),
     }),
     {
-      name: 'auth-storage',
-      partialize: (state): Pick<AuthState, 'user'> => ({
+      name: "auth-storage",
+      partialize: (state): Pick<AuthState, "user"> => ({
         user: state.user,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export default useAuthStore;

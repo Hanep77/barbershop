@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/layout";
-import { AdminLayout } from "./components/admin/admin-layout";
+import { AdminLayout } from "./components/admin-layout";
 import { Home } from "./pages/home";
 import { Search } from "./pages/search";
 import { BarbershopDetail } from "./pages/barbershop-detail";
@@ -18,6 +18,7 @@ import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
 import GuestOnly from "../middleware/GuestOnly";
 import AuthCallback from "./pages/auth-callback";
+import AdminOnly from "../middleware/AdminOnly";
 
 export const router = createBrowserRouter([
   {
@@ -32,22 +33,27 @@ export const router = createBrowserRouter([
         Component: Register,
       },
       {
-        path: '/auth/callback',
-        element: <AuthCallback />
-      }
-    ]
+        path: "/auth/callback",
+        element: <AuthCallback />,
+      },
+    ],
   },
   {
     path: "/admin",
-    Component: AdminLayout,
+    Component: AdminOnly,
     children: [
-      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
-      { path: "dashboard", Component: AdminDashboard },
-      { path: "profile", Component: AdminProfile },
-      { path: "services", Component: AdminServices },
-      { path: "barbers", Component: AdminBarbers },
-      { path: "bookings", Component: AdminBookings },
-      { path: "settings", Component: AdminSettings },
+      {
+        Component: AdminLayout,
+        children: [
+          { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+          { path: "dashboard", Component: AdminDashboard },
+          { path: "profile", Component: AdminProfile },
+          { path: "services", Component: AdminServices },
+          { path: "barbers", Component: AdminBarbers },
+          { path: "bookings", Component: AdminBookings },
+          { path: "settings", Component: AdminSettings },
+        ],
+      },
     ],
   },
   {
@@ -60,10 +66,8 @@ export const router = createBrowserRouter([
       { path: "booking", Component: Booking },
       { path: "my-bookings", Component: MyBookings },
       { path: "ai-consultant", Component: AIConsultant },
-      // Redirects for old single-tenant routes
       { path: "services", element: <Navigate to="/search" replace /> },
       { path: "barbers", element: <Navigate to="/search" replace /> },
-      // 404 catch-all
       { path: "*", Component: NotFound },
     ],
   },

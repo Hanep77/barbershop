@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useLocation, Outlet } from "react-router";
 import {
   LayoutDashboard,
@@ -72,7 +72,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Shop Info */}
         <div className="p-6 border-b border-border">
           <p className="text-xs text-muted-foreground mb-1">Managing</p>
-          <p className="text-sm text-foreground font-medium">Marcus & Co. Barbers</p>
+          <p className="text-sm text-foreground font-medium">
+            Marcus & Co. Barbers
+          </p>
           <p className="text-xs text-muted-foreground">Downtown Manhattan</p>
         </div>
 
@@ -110,9 +112,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        {children || <Outlet />}
-      </main>
+      <main className="flex-1 overflow-auto">{children || <Outlet />}</main>
     </div>
   );
 }

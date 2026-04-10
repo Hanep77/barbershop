@@ -1,3 +1,5 @@
+import type { Barbershop } from "./barbershop";
+
 export interface User {
   id: number;
   name: string;
@@ -5,6 +7,8 @@ export interface User {
   email_verified_at: string | null;
   created_at: string;
   updated_at: string;
+  role: "customer" | "barbershop";
+  barbershop?: Barbershop | null;
 }
 
 export interface AuthState {
@@ -17,7 +21,13 @@ export interface AuthState {
   // --- Actions ---
   init: () => Promise<void>;
   setUser: (user: User | null) => void;
-  register: (name: string, email: string, role: string, password: string, password_confirmation: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    role: string,
+    password: string,
+    password_confirmation: string,
+  ) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;

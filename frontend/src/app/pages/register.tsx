@@ -4,6 +4,7 @@ import { Scissors, Eye, EyeOff, User, Building2 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import useAuthStore from "../../store/authStore";
 import type { RegisterErrors, RegisterForm } from "../../types/auth";
+import { AxiosError } from "axios";
 
 export function Register() {
   const navigate = useNavigate();
@@ -11,18 +12,17 @@ export function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState<"customer" | "owner">("customer");
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({});
-  const { register, loading } = useAuthStore();
+  const { loading, register } = useAuthStore();
 
   const handleRegister = async (e: SubmitEvent) => {
     e.preventDefault();
 
     const formData = new FormData(e.target as HTMLFormElement);
-    console.log(formData.get("name"));
 
     const user = {
       name: formData.get("name"),
       email: formData.get("email"),
-      role: role,
+      role: role == "owner" ? "barbershop" : "customer",
       password: formData.get("password"),
       password_confirmation: formData.get("password_confirmation"),
     } as RegisterForm;
@@ -37,9 +37,11 @@ export function Register() {
       );
       navigate("/");
     } catch (err: unknown) {
-      const laravelErrors = (err as any)?.response?.data?.errors as
-        | RegisterErrors;
-      setFieldErrors(laravelErrors);
+      if (err instanceof AxiosError) {
+        console.log(err.response?.data);
+        setFieldErrors(err.response?.data?.errors || {});
+        return;
+      }
     }
   };
 
@@ -68,11 +70,15 @@ export function Register() {
                 BarberBrody
               </span>
             </div>
-            <h1 className="font-bold text-foreground mb-6" style={{ fontSize: '3rem', lineHeight: '1.2' }}>
+            <h1
+              className="font-bold text-foreground mb-6"
+              style={{ fontSize: "3rem", lineHeight: "1.2" }}
+            >
               Join BarberBrody
             </h1>
             <p className="text-xl text-muted-foreground font-light leading-relaxed max-w-md">
-              Create your account to start booking premium grooming services or manage your barbershop business.
+              Create your account to start booking premium grooming services or
+              manage your barbershop business.
             </p>
           </div>
 
@@ -84,7 +90,9 @@ export function Register() {
               </div>
               <div>
                 <p className="text-foreground font-normal">For Customers</p>
-                <p className="text-muted-foreground font-light text-sm">Book appointments, track history, save favorites</p>
+                <p className="text-muted-foreground font-light text-sm">
+                  Book appointments, track history, save favorites
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -92,8 +100,12 @@ export function Register() {
                 <div className="w-2 h-2 bg-primary rounded-full" />
               </div>
               <div>
-                <p className="text-foreground font-normal">For Barbershop Owners</p>
-                <p className="text-muted-foreground font-light text-sm">Manage schedules, track revenue, grow your business</p>
+                <p className="text-foreground font-normal">
+                  For Barbershop Owners
+                </p>
+                <p className="text-muted-foreground font-light text-sm">
+                  Manage schedules, track revenue, grow your business
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -102,7 +114,9 @@ export function Register() {
               </div>
               <div>
                 <p className="text-foreground font-normal">Secure & Simple</p>
-                <p className="text-muted-foreground font-light text-sm">Your data is protected with industry-standard security</p>
+                <p className="text-muted-foreground font-light text-sm">
+                  Your data is protected with industry-standard security
+                </p>
               </div>
             </div>
           </div>
@@ -131,12 +145,16 @@ export function Register() {
             </p>
           </div>
 
-
           <form onSubmit={handleRegister} className="space-y-6">
             {/* Full Name Field */}
             <div>
-              {fieldErrors.name && <p className="text-red-500 italic">{fieldErrors.name}</p>}
-              <label htmlFor="fullName" className="block font-bold text-card-foreground mb-2">
+              {fieldErrors.name && (
+                <p className="text-red-500 italic">{fieldErrors.name}</p>
+              )}
+              <label
+                htmlFor="fullName"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Full Name
               </label>
               <input
@@ -151,8 +169,13 @@ export function Register() {
 
             {/* Email Field */}
             <div>
-              {fieldErrors.email && <p className="text-red-500 italic">{fieldErrors.email}</p>}
-              <label htmlFor="email" className="block font-bold text-card-foreground mb-2">
+              {fieldErrors.email && (
+                <p className="text-red-500 italic">{fieldErrors.email}</p>
+              )}
+              <label
+                htmlFor="email"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -167,8 +190,13 @@ export function Register() {
 
             {/* Password Field */}
             <div>
-              {fieldErrors.password && <p className="text-red-500 italic">{fieldErrors.password}</p>}
-              <label htmlFor="password" className="block font-bold text-card-foreground mb-2">
+              {fieldErrors.password && (
+                <p className="text-red-500 italic">{fieldErrors.password}</p>
+              )}
+              <label
+                htmlFor="password"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -196,7 +224,10 @@ export function Register() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block font-bold text-card-foreground mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Confirm Password
               </label>
               <div className="relative">
@@ -231,15 +262,26 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("customer")}
-                  className={`p-4 rounded-lg border-2 transition-all ${role === "customer"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                    }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    role === "customer"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
                 >
-                  <User className={`w-6 h-6 mx-auto mb-2 ${role === "customer" ? "text-primary" : "text-muted-foreground"
-                    }`} />
-                  <p className={`font-bold text-sm ${role === "customer" ? "text-card-foreground" : "text-muted-foreground"
-                    }`}>
+                  <User
+                    className={`w-6 h-6 mx-auto mb-2 ${
+                      role === "customer"
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                  <p
+                    className={`font-bold text-sm ${
+                      role === "customer"
+                        ? "text-card-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
                     Customer
                   </p>
                 </button>
@@ -247,15 +289,26 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("owner")}
-                  className={`p-4 rounded-lg border-2 transition-all ${role === "owner"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                    }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${
+                    role === "owner"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
                 >
-                  <Building2 className={`w-6 h-6 mx-auto mb-2 ${role === "owner" ? "text-primary" : "text-muted-foreground"
-                    }`} />
-                  <p className={`font-bold text-sm ${role === "owner" ? "text-card-foreground" : "text-muted-foreground"
-                    }`}>
+                  <Building2
+                    className={`w-6 h-6 mx-auto mb-2 ${
+                      role === "owner"
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                  <p
+                    className={`font-bold text-sm ${
+                      role === "owner"
+                        ? "text-card-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
                     Barbershop Owner
                   </p>
                 </button>
@@ -268,18 +321,23 @@ export function Register() {
               className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
             >
               {loading ? "Loading..." : "Create Account"}
-
             </button>
           </form>
 
           {/* Terms */}
           <p className="text-center mt-6 text-muted-foreground font-light text-sm">
             By signing up, you agree to our{" "}
-            <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors">
+            <Link
+              to="/terms"
+              className="text-primary hover:text-primary/80 transition-colors"
+            >
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors">
+            <Link
+              to="/privacy"
+              className="text-primary hover:text-primary/80 transition-colors"
+            >
               Privacy Policy
             </Link>
           </p>

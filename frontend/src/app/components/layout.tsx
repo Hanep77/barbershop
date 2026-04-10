@@ -13,7 +13,7 @@ export function Layout() {
 
   const handleLogout = async () => {
     await logout();
-  }
+  };
 
   const navItems = [
     { path: "/", label: "Home", icon: Scissors },
@@ -68,10 +68,11 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2 transition-colors ${isActive(item.path)
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
+                    className={`flex items-center gap-2 transition-colors ${
+                      isActive(item.path)
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-normal">{item.label}</span>
@@ -82,24 +83,40 @@ export function Layout() {
 
             {/* Auth Buttons (Desktop) */}
             <div className="hidden md:flex items-center gap-4">
-              {
-                user ?
-                  <button className="bg-red-500 py-2 px-4 rounded-md cursor-pointer" onClick={handleLogout}>Logout</button> :
-                  <>
+              {user ? (
+                <>
+                  {user?.role === "barbershop" && (
                     <Link
-                      to="/login"
-                      className="px-6 py-2.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-                    >
-                      Log In
-                    </Link>
-                    <Link
-                      to="/register"
+                      to="/admin/dashboard"
                       className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
-                      Sign Up
+                      Dashboard
                     </Link>
-                  </>
-              }
+                  )}
+
+                  <button
+                    className="bg-red-500 py-2 px-4 rounded-md cursor-pointer"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="px-6 py-2.5 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -125,10 +142,11 @@ export function Layout() {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.path)
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive(item.path)
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.label}</span>
@@ -185,7 +203,8 @@ export function Layout() {
                 </span>
               </div>
               <p className="text-muted-foreground font-light text-sm leading-relaxed">
-                Your trusted marketplace for discovering and booking premium barbershops.
+                Your trusted marketplace for discovering and booking premium
+                barbershops.
               </p>
             </div>
 
@@ -220,7 +239,9 @@ export function Layout() {
             </div>
 
             <div>
-              <h4 className="font-bold text-foreground mb-4">For Barbershops</h4>
+              <h4 className="font-bold text-foreground mb-4">
+                For Barbershops
+              </h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link
@@ -277,10 +298,7 @@ export function Layout() {
                   </a>
                 </li>
                 <li className="pt-2">
-                  <a
-                    href="#"
-                    className="hover:text-primary transition-colors"
-                  >
+                  <a href="#" className="hover:text-primary transition-colors">
                     Help Center
                   </a>
                 </li>

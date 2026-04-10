@@ -27,7 +27,7 @@ class BarbershopController extends Controller
         $validated = $request->validate([
             "name" => ["required", "max:100"],
             "address" => ["required"],
-            "map_url" => ["nullabled"],
+            "map_url" => ["nullable"],
             "phone_number" => ["required", "max:15"],
             "description" => ["nullable"],
             "is_active" => ["nullable"],
