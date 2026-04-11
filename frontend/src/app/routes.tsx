@@ -16,7 +16,9 @@ import { AdminServices } from "./pages/admin/services";
 import { AdminBarbers } from "./pages/admin/barbers";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
+import { RegisterBarbershop } from "./pages/admin/register-barbershop";
 import GuestOnly from "../middleware/GuestOnly";
+import RequireBarbershop from "../middleware/RequireBarbershop";
 import AuthCallback from "./pages/auth-callback";
 import AdminOnly from "../middleware/AdminOnly";
 
@@ -43,15 +45,29 @@ export const router = createBrowserRouter([
     Component: AdminOnly,
     children: [
       {
-        Component: AdminLayout,
+        Component: RequireBarbershop,
         children: [
-          { index: true, element: <Navigate to="/admin/dashboard" replace /> },
-          { path: "dashboard", Component: AdminDashboard },
-          { path: "profile", Component: AdminProfile },
-          { path: "services", Component: AdminServices },
-          { path: "barbers", Component: AdminBarbers },
-          { path: "bookings", Component: AdminBookings },
-          { path: "settings", Component: AdminSettings },
+          {
+            Component: AdminLayout,
+            children: [
+              {
+                index: true,
+                element: <Navigate to="/admin/dashboard" replace />,
+              },
+              { path: "dashboard", Component: AdminDashboard },
+              { path: "profile", Component: AdminProfile },
+              { path: "services", Component: AdminServices },
+              { path: "barbers", Component: AdminBarbers },
+              { path: "bookings", Component: AdminBookings },
+              { path: "settings", Component: AdminSettings },
+            ],
+          },
+        ],
+      },
+      {
+        Component: Layout,
+        children: [
+          { path: "register-barbershop", Component: RegisterBarbershop },
         ],
       },
     ],

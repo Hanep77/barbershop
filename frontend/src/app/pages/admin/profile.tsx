@@ -1,29 +1,22 @@
-import { useState } from "react";
-import { Store, MapPin, Phone, Mail, Clock, Image, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Store, MapPin, Phone, Mail, Image, Save } from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { toast } from "sonner";
+import { getBarbershop } from "../../../services/barbershop";
+import type { Barbershop } from "../../../types/barbershop";
+import type { User } from "../../../types/auth";
 
-// Mock initial data for Marcus & Co.
-const initialProfile = {
-  name: "Marcus & Co. Barbers",
-  description:
-    "Premium barbershop specializing in classic cuts and modern styles. Our experienced team delivers exceptional grooming services in a sophisticated atmosphere.",
-  address: "123 Broadway, New York, NY 10001",
-  phone: "(555) 123-4567",
-  email: "info@marcusandco.com",
-  hours: {
-    "Monday - Friday": "9:00 AM - 8:00 PM",
-    Saturday: "9:00 AM - 6:00 PM",
-    Sunday: "10:00 AM - 4:00 PM",
-  },
-};
+interface BarbershopProfile {
+  barbershop: Barbershop;
+  user: Partial<User>;
+}
 
 export function AdminProfile() {
-  const [profile, setProfile] = useState(initialProfile);
+  const [profile, setProfile] = useState<BarbershopProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [gallery, setGallery] = useState<string[]>([
     "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -37,19 +30,23 @@ export function AdminProfile() {
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
-    setProfile(initialProfile);
-    setIsEditing(false);
-  };
-
   const handleFileUpload = () => {
-    // Mock file upload - in reality this would open a file picker
     toast.info("File upload functionality would open here");
   };
 
+  const getBarbershopInfo = async () => {
+    const data = await getBarbershop();
+    console.log(data);
+    const { barbershop, user } = data.data;
+    setProfile({ barbershop, user });
+  };
+
+  useEffect(() => {
+    getBarbershopInfo();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b border-border bg-muted">
         <div className="p-6">
           <div className="flex items-center justify-between">
@@ -95,12 +92,12 @@ export function AdminProfile() {
                   <Store className="w-5 h-5 text-muted-foreground" />
                   <Input
                     id="name"
-                    value={profile.name}
+                    value={profile?.barbershop?.name}
                     onChange={(e) =>
                       setProfile({ ...profile, name: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="flex-1"
+                    className="flex-1 text-foreground"
                   />
                 </div>
               </div>
@@ -109,13 +106,13 @@ export function AdminProfile() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={profile.description}
+                  value={profile?.barbershop?.description}
                   onChange={(e) =>
                     setProfile({ ...profile, description: e.target.value })
                   }
                   disabled={!isEditing}
                   rows={4}
-                  className="resize-none"
+                  className="resize-none text-foreground"
                 />
                 <p className="text-xs text-muted-foreground">
                   This description will be shown to customers and used by our AI
@@ -129,12 +126,12 @@ export function AdminProfile() {
                   <MapPin className="w-5 h-5 text-muted-foreground" />
                   <Input
                     id="address"
-                    value={profile.address}
+                    value={profile?.barbershop?.address}
                     onChange={(e) =>
                       setProfile({ ...profile, address: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="flex-1"
+                    className="flex-1 text-foreground"
                   />
                 </div>
               </div>
@@ -146,12 +143,12 @@ export function AdminProfile() {
                     <Phone className="w-5 h-5 text-muted-foreground" />
                     <Input
                       id="phone"
-                      value={profile.phone}
+                      value={profile?.barbershop?.phone_number}
                       onChange={(e) =>
                         setProfile({ ...profile, phone: e.target.value })
                       }
                       disabled={!isEditing}
-                      className="flex-1"
+                      className="flex-1 text-foreground"
                     />
                   </div>
                 </div>
@@ -163,12 +160,12 @@ export function AdminProfile() {
                     <Input
                       id="email"
                       type="email"
-                      value={profile.email}
+                      value={profile?.user?.email}
                       onChange={(e) =>
                         setProfile({ ...profile, email: e.target.value })
                       }
                       disabled={!isEditing}
-                      className="flex-1"
+                      className="flex-1 text-foreground"
                     />
                   </div>
                 </div>
@@ -177,7 +174,7 @@ export function AdminProfile() {
           </Card>
 
           {/* Operating Hours */}
-          <Card className="bg-card">
+          {/* <Card className="bg-card">
             <div className="p-6 border-b border-border">
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
@@ -185,17 +182,19 @@ export function AdminProfile() {
               </div>
             </div>
             <div className="p-6 space-y-4">
-              {Object.entries(profile.hours).map(([day, hours]) => (
+              {Object.entries(profile?.barbershop?.hours || {}).map(([day, hours]) => (
                 <div key={day} className="flex items-center gap-4">
                   <div className="w-32">
-                    <Label className="text-sm text-card-foreground">{day}</Label>
+                    <Label className="text-sm text-card-foreground">
+                      {day}
+                    </Label>
                   </div>
                   <Input
                     value={hours}
                     onChange={(e) =>
                       setProfile({
                         ...profile,
-                        hours: { ...profile.hours, [day]: e.target.value },
+                        hours: { ...profile?.barbershop?.hours, [day]: e.target.value },
                       })
                     }
                     disabled={!isEditing}
@@ -204,7 +203,7 @@ export function AdminProfile() {
                 </div>
               ))}
             </div>
-          </Card>
+          </Card> */}
 
           {/* Gallery Management */}
           <Card className="bg-card">

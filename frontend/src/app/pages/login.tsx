@@ -24,14 +24,10 @@ export function Login() {
     } as LoginForm;
 
     try {
-      await login(
-        user.email,
-        user.password,
-      );
+      await login(user.email, user.password);
       navigate("/");
     } catch (err: unknown) {
-      const laravelErrors = (err as any)?.response?.data?.errors as
-        | LoginErrors;
+      const laravelErrors = (err as any)?.response?.data?.errors as LoginErrors;
       setFieldErrors(laravelErrors);
     }
   };
@@ -66,11 +62,15 @@ export function Login() {
                 BarberBrody
               </span>
             </div>
-            <h1 className="font-bold text-foreground mb-6" style={{ fontSize: '3rem', lineHeight: '1.2' }}>
+            <h1
+              className="font-bold text-foreground mb-6"
+              style={{ fontSize: "3rem", lineHeight: "1.2" }}
+            >
               Welcome Back
             </h1>
             <p className="text-xl text-muted-foreground font-light leading-relaxed max-w-md">
-              Premium grooming made simple. Log in to manage your appointments and experience the BarberBrody difference.
+              Premium grooming made simple. Log in to manage your appointments
+              and experience the BarberBrody difference.
             </p>
           </div>
 
@@ -81,8 +81,12 @@ export function Login() {
                 <div className="w-2 h-2 bg-primary rounded-full" />
               </div>
               <div>
-                <p className="text-foreground font-normal">Easy Online Booking</p>
-                <p className="text-muted-foreground font-light text-sm">Schedule appointments in seconds</p>
+                <p className="text-foreground font-normal">
+                  Easy Online Booking
+                </p>
+                <p className="text-muted-foreground font-light text-sm">
+                  Schedule appointments in seconds
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -91,7 +95,9 @@ export function Login() {
               </div>
               <div>
                 <p className="text-foreground font-normal">Expert Barbers</p>
-                <p className="text-muted-foreground font-light text-sm">Choose from our skilled professionals</p>
+                <p className="text-muted-foreground font-light text-sm">
+                  Choose from our skilled professionals
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -100,7 +106,9 @@ export function Login() {
               </div>
               <div>
                 <p className="text-foreground font-normal">Manage Bookings</p>
-                <p className="text-muted-foreground font-light text-sm">View and update your appointments anytime</p>
+                <p className="text-muted-foreground font-light text-sm">
+                  View and update your appointments anytime
+                </p>
               </div>
             </div>
           </div>
@@ -132,8 +140,13 @@ export function Login() {
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Field */}
             <div>
-              {fieldErrors.email && <p className="text-red-500 italic">{fieldErrors.email}</p>}
-              <label htmlFor="email" className="block font-bold text-card-foreground mb-2">
+              {fieldErrors.email && (
+                <p className="text-red-500 italic">{fieldErrors.email}</p>
+              )}
+              <label
+                htmlFor="email"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -146,11 +159,15 @@ export function Login() {
               />
             </div>
 
-
             {/* Password Field */}
             <div>
-              {fieldErrors.password && <p className="text-red-500 italic">{fieldErrors.password}</p>}
-              <label htmlFor="password" className="block font-bold text-card-foreground mb-2">
+              {fieldErrors.password && (
+                <p className="text-red-500 italic">{fieldErrors.password}</p>
+              )}
+              <label
+                htmlFor="password"
+                className="block font-bold text-card-foreground mb-2"
+              >
                 Password
               </label>
               <div className="relative">

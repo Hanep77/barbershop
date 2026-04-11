@@ -8,7 +8,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   role: "customer" | "barbershop";
-  barbershop?: Barbershop | null;
+  barbershop?: Barbershop[] | null;
 }
 
 export interface AuthState {

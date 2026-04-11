@@ -1,7 +1,7 @@
 import api from "../lib/axios";
 
 // MUST be called before login to get CSRF cookie
-const getCsrf = () => api.get("/sanctum/csrf-cookie");
+export const getCsrf = () => api.get("/sanctum/csrf-cookie");
 
 export const register = async (
   name: string,

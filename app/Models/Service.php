@@ -12,4 +12,9 @@ class Service extends Model
     {
         return $this->belongsTo(Barbershop::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(ServiceCategory::class, "category_id");
+    }
 }

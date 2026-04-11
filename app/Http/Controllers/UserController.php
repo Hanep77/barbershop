@@ -26,7 +26,7 @@ class UserController extends Controller
         $request->session()->regenerate();
 
         return response()->json([
-            "user" => $request->user()->only(["id", "name", "email", "role"]),
+            "user" => $request->user()->only(["id", "name", "email", "role", "barbershop"]),
         ]);
     }
 

@@ -44,7 +44,10 @@ class BarbershopController extends Controller
             ]);
         }
 
-        return response()->json(['barbershop' => $barbershop, 'updatedUser' => $user]);
+        $user = $user->fresh();
+        $user->load("barbershop");
+
+        return response()->json(["user" => $user], 201);
     }
 
     public function show(Barbershop $barbershop)
