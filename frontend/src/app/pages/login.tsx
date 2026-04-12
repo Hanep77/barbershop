@@ -16,7 +16,6 @@ export function Login() {
     e.preventDefault();
 
     const formData = new FormData(e.target as HTMLFormElement);
-    console.log(formData.get("name"));
 
     const user = {
       email: formData.get("email"),
@@ -24,8 +23,12 @@ export function Login() {
     } as LoginForm;
 
     try {
-      await login(user.email, user.password);
-      navigate("/");
+      const res = await login(user.email, user.password);
+      if (res?.role == "barbershop") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       const laravelErrors = (err as any)?.response?.data?.errors as LoginErrors;
       setFieldErrors(laravelErrors);

@@ -28,7 +28,7 @@ export interface AuthState {
     password: string,
     password_confirmation: string,
   ) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void | User>;
   logout: () => Promise<void>;
   clearError: () => void;
 }

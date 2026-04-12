@@ -35,7 +35,12 @@ export function Register() {
         user.password,
         user.password_confirmation,
       );
-      navigate("/");
+
+      if (user.role == "barbershop") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         console.log(err.response?.data);
@@ -262,25 +267,22 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("customer")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    role === "customer"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${role === "customer"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                    }`}
                 >
                   <User
-                    className={`w-6 h-6 mx-auto mb-2 ${
-                      role === "customer"
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`w-6 h-6 mx-auto mb-2 ${role === "customer"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                      }`}
                   />
                   <p
-                    className={`font-bold text-sm ${
-                      role === "customer"
-                        ? "text-card-foreground"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`font-bold text-sm ${role === "customer"
+                      ? "text-card-foreground"
+                      : "text-muted-foreground"
+                      }`}
                   >
                     Customer
                   </p>
@@ -289,25 +291,22 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setRole("owner")}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    role === "owner"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${role === "owner"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                    }`}
                 >
                   <Building2
-                    className={`w-6 h-6 mx-auto mb-2 ${
-                      role === "owner"
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`w-6 h-6 mx-auto mb-2 ${role === "owner"
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                      }`}
                   />
                   <p
-                    className={`font-bold text-sm ${
-                      role === "owner"
-                        ? "text-card-foreground"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`font-bold text-sm ${role === "owner"
+                      ? "text-card-foreground"
+                      : "text-muted-foreground"
+                      }`}
                   >
                     Barbershop Owner
                   </p>

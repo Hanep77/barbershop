@@ -56,7 +56,6 @@ const useAuthStore = create<AuthState>()(
             password,
             password_confirmation,
           );
-          console.log(res.data);
           set({ user: res.data.user as User });
         } catch (err: unknown) {
           const message =
@@ -70,11 +69,12 @@ const useAuthStore = create<AuthState>()(
         }
       },
 
-      login: async (email: string, password: string): Promise<void> => {
+      login: async (email: string, password: string): Promise<void | User> => {
         set({ loading: true, error: null });
         try {
           const res = await loginSvc(email, password);
           set({ user: res.data.user as User });
+          return res.data.user;
         } catch (err: unknown) {
           const message =
             err instanceof Error
