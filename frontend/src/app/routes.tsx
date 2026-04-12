@@ -13,6 +13,7 @@ import { NotFound } from "./pages/not-found";
 import { AdminDashboard } from "./pages/admin/dashboard";
 import { AdminProfile } from "./pages/admin/profile";
 import { AdminServices } from "./pages/admin/services";
+import { AdminServiceCategory } from "./pages/admin/service-category";
 import { AdminBarbers } from "./pages/admin/barbers";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
               },
               { path: "dashboard", Component: AdminDashboard },
               { path: "profile", Component: AdminProfile },
+              {
+                path: "service-categories",
+                Component: AdminServiceCategory,
+              },
               { path: "services", Component: AdminServices },
               { path: "barbers", Component: AdminBarbers },
               { path: "bookings", Component: AdminBookings },

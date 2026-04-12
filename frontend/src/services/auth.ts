@@ -25,7 +25,10 @@ export const login = async (email: string, password: string) => {
   return api.post("/api/login", { email, password });
 };
 
-export const logout = () => api.post("/api/logout");
+export const logout = () =>
+  api.post("/api/logout").then(() => {
+    window.location.href = "/login";
+  });
 export const getUser = () => api.get("/api/me");
 
 export const getGoogleRedirectUrl = async () => {

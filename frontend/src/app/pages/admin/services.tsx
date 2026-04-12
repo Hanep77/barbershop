@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import {
   Scissors,
   Plus,
@@ -31,90 +31,35 @@ import {
 } from "../../components/ui/select";
 import { Badge } from "../../components/ui/badge";
 import { toast } from "sonner";
-
-interface Service {
-  id: number;
-  name: string;
-  price: string;
-  duration: string;
-  description: string;
-  category: string; // Hair style category for RAG/AI
-}
-
-// Hair style categories for RAG vector embeddings
-const hairStyleCategories = [
-  "Classic Cuts",
-  "Modern Styles",
-  "Fades & Tapers",
-  "Beard Grooming",
-  "Traditional Shaves",
-  "Premium Packages",
-  "Kids Services",
-  "Textured Styles",
-  "Creative Designs",
-];
-
-// Mock initial services for Marcus & Co.
-const initialServices: Service[] = [
-  {
-    id: 1,
-    name: "Classic Cut",
-    price: "45",
-    duration: "45",
-    description: "Traditional scissor cut tailored to your style preferences.",
-    category: "Classic Cuts",
-  },
-  {
-    id: 2,
-    name: "Signature Cut & Style",
-    price: "65",
-    duration: "60",
-    description: "Complete haircut with wash, style, and finishing products.",
-    category: "Modern Styles",
-  },
-  {
-    id: 3,
-    name: "Beard Trim & Shape",
-    price: "35",
-    duration: "30",
-    description: "Expert beard grooming with hot towel treatment.",
-    category: "Beard Grooming",
-  },
-  {
-    id: 4,
-    name: "The Full Experience",
-    price: "95",
-    duration: "90",
-    description: "Premium package with cut, style, beard trim, and massage.",
-    category: "Premium Packages",
-  },
-  {
-    id: 5,
-    name: "Kids Cut",
-    price: "30",
-    duration: "30",
-    description: "Patient haircut service for children under 12.",
-    category: "Kids Services",
-  },
-];
+import {
+  adminGetBarbershopServices,
+  adminCreateServiceCategory,
+} from "../../../services/service";
+import { adminGetServiceCategories } from "../../../services/serviceCategory";
+import type { CreateServiceRequest, Service } from "../../../types/services";
+import type { ServiceCategory } from "../../../types/serviceCategory";
+import { AxiosError } from "axios";
 
 export function AdminServices() {
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const [services, setServices] = useState<Service[]>([]);
+  const [hairStyleCategories, setHairStyleCategories] = useState<
+    ServiceCategory[]
+  >([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [formData, setFormData] = useState<Partial<Service>>({
     name: "",
-    price: "",
-    duration: "",
+    price: 0,
     description: "",
-    category: "",
+    category_id: "",
+    duration_minutes: 0,
   });
 
-  const filteredServices = services.filter(
+  const filteredServices = services?.filter(
     (service) =>
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.category.toLowerCase().includes(searchQuery.toLowerCase())
+      service.category.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleOpenDialog = (service?: Service) => {
@@ -125,10 +70,10 @@ export function AdminServices() {
       setEditingService(null);
       setFormData({
         name: "",
-        price: "",
-        duration: "",
+        price: 0,
+        duration_minutes: 0,
         description: "",
-        category: "",
+        category_id: "",
       });
     }
     setIsDialogOpen(true);
@@ -139,48 +84,113 @@ export function AdminServices() {
     setEditingService(null);
     setFormData({
       name: "",
-      price: "",
-      duration: "",
+      price: 0,
+      duration_minutes: 0,
       description: "",
-      category: "",
+      category_id: "",
     });
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.price || !formData.duration || !formData.category) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
+  // const handleSave = () => {
+  //   if (
+  //     !formData.name ||
+  //     !formData.price ||
+  //     !formData.duration_minutes ||
+  //     !formData.category_id
+  //   ) {
+  //     toast.error("Please fill in all required fields");
+  //     return;
+  //   }
 
-    if (editingService) {
-      // Update existing service
-      setServices(
-        services.map((s) =>
-          s.id === editingService.id ? { ...editingService, ...formData } : s
-        )
-      );
-      toast.success("Service updated successfully!");
-    } else {
-      // Create new service
-      const newService: Service = {
-        id: Math.max(...services.map((s) => s.id), 0) + 1,
-        name: formData.name!,
-        price: formData.price!,
-        duration: formData.duration!,
-        description: formData.description || "",
-        category: formData.category!,
-      };
-      setServices([...services, newService]);
-      toast.success("Service created successfully!");
-    }
+  //   if (editingService) {
+  //     // Update existing service
+  //     setServices(
+  //       services?.map((s) =>
+  //         s.id === editingService.id ? { ...editingService, ...formData } : s,
+  //       ),
+  //     );
+  //     toast.success("Service updated successfully!");
+  //   }
+  //   handleCloseDialog();
+  // };
 
-    handleCloseDialog();
-  };
-
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     setServices(services.filter((s) => s.id !== id));
     toast.success("Service deleted successfully!");
   };
+
+  const fetchServices = async () => {
+    await adminGetBarbershopServices()
+      .then((res) => {
+        const { data } = res;
+        setServices(data || []);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof AxiosError) {
+          toast.error(
+            error.response?.data?.message || "Failed to fetch services",
+          );
+          console.log(error.response);
+          return;
+        } else {
+          toast.error("Failed to fetch services");
+          console.log(error);
+        }
+      });
+  };
+
+  const fetchServiceCategories = async () => {
+    try {
+      const response = await adminGetServiceCategories();
+      const { categories } = response.data;
+      setHairStyleCategories(categories || []);
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        toast.error(
+          err.response?.data?.message || "Failed to fetch service categories",
+        );
+        console.log(err.response);
+        return;
+      } else {
+        toast.error("Failed to fetch service categories");
+        console.log(err);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    const payload: CreateServiceRequest = {
+      name: formData.name as string,
+      price: Number(formData.price),
+      duration_minutes: Number(formData.duration_minutes),
+      description: formData.description as string,
+      category_id: formData.category_id as string,
+    };
+    console.log(payload);
+    await adminCreateServiceCategory(payload)
+      .then((res) => {
+        const { service } = res.data;
+        console.log(service);
+        setServices((prev) => [service, ...(prev || [])]);
+        toast.success("Service added successfully!");
+        handleCloseDialog();
+      })
+      .catch((err: unknown) => {
+        if (err instanceof AxiosError) {
+          toast.error(err.response?.data?.message || "Failed to save service");
+          console.log(err.response);
+          return;
+        }
+        toast.error("Failed to save service");
+        console.log(err);
+      });
+  };
+
+  useEffect(() => {
+    fetchServices();
+    fetchServiceCategories();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,7 +201,8 @@ export function AdminServices() {
             <div>
               <h1 className="text-foreground mb-1">Services Management</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your services and hair style categories for AI recommendations
+                Manage your services and hair style categories for AI
+                recommendations
               </p>
             </div>
             <Button onClick={() => handleOpenDialog()}>
@@ -215,11 +226,11 @@ export function AdminServices() {
                   🤖 AI Integration & RAG System
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  The <strong>Hair Style Category</strong> field is crucial for our
-                  AI chatbot. Categories are converted into vector embeddings,
-                  allowing the RAG (Retrieval-Augmented Generation) system to
-                  intelligently recommend your services when customers ask about
-                  specific hairstyles.
+                  The <strong>Hair Style Category</strong> field is crucial for
+                  our AI chatbot. Categories are converted into vector
+                  embeddings, allowing the RAG (Retrieval-Augmented Generation)
+                  system to intelligently recommend your services when customers
+                  ask about specific hairstyles.
                 </p>
               </div>
             </div>
@@ -265,7 +276,7 @@ export function AdminServices() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredServices.map((service) => (
+                {filteredServices?.map((service) => (
                   <tr
                     key={service.id}
                     className="hover:bg-muted/50 transition-colors"
@@ -273,10 +284,10 @@ export function AdminServices() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm text-card-foreground">
-                          {service.name}
+                          {service?.name}
                         </p>
                         <p className="text-xs text-muted-foreground line-clamp-1">
-                          {service.description}
+                          {service?.description}
                         </p>
                       </div>
                     </td>
@@ -285,19 +296,19 @@ export function AdminServices() {
                         variant="outline"
                         className="bg-primary/10 text-primary border-primary/20"
                       >
-                        {service.category}
+                        {service?.category?.name}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-card-foreground">
                         <DollarSign className="w-4 h-4 text-muted-foreground" />
-                        {service.price}
+                        {service?.price}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-card-foreground">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        {service.duration} min
+                        {service?.duration_minutes} min
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -322,7 +333,7 @@ export function AdminServices() {
                 ))}
               </tbody>
             </table>
-            {filteredServices.length === 0 && (
+            {filteredServices?.length === 0 && (
               <div className="p-12 text-center">
                 <Scissors className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No services found</p>
@@ -335,116 +346,130 @@ export function AdminServices() {
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingService ? "Edit Service" : "Add New Service"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingService
-                ? "Update service information and category for AI recommendations"
-                : "Create a new service with hair style category for AI recommendations"}
-            </DialogDescription>
-          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>
+                {editingService ? "Edit Service" : "Add New Service"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingService
+                  ? "Update service information and category for AI recommendations"
+                  : "Create a new service with hair style category for AI recommendations"}
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Service Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="e.g., Classic Cut"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">
-                Hair Style Category * <Badge variant="secondary" className="ml-2">For AI/RAG</Badge>
-              </Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, category: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {hairStyleCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                This category helps our AI chatbot recommend this service to customers
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (USD) *</Label>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
-                    placeholder="45"
-                  />
+                <Label htmlFor="name">Service Name *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="e.g., Classic Cut"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">
+                  Hair Style Category *{" "}
+                  <Badge variant="secondary" className="ml-2">
+                    For AI/RAG
+                  </Badge>
+                </Label>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, category_id: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hairStyleCategories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This category helps our AI chatbot recommend this service to
+                  customers
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (RP) *</Label>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          price: Number(e.target.value),
+                        })
+                      }
+                      placeholder="45"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Duration (minutes) *</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="duration"
+                      type="number"
+                      value={formData.duration_minutes}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          duration_minutes: Number(e.target.value),
+                        })
+                      }
+                      placeholder="45"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes) *</Label>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) =>
-                      setFormData({ ...formData, duration: e.target.value })
-                    }
-                    placeholder="45"
-                  />
-                </div>
+                <Label htmlFor="description">Detailed Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData?.description as string}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Describe this service in detail..."
+                  rows={4}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  A detailed description helps the AI provide better
+                  recommendations
+                </p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Detailed Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Describe this service in detail..."
-                rows={4}
-                className="resize-none"
-              />
-              <p className="text-xs text-muted-foreground">
-                A detailed description helps the AI provide better recommendations
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              {editingService ? "Update Service" : "Create Service"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseDialog}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingService ? "Update Service" : "Create Service"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
