@@ -1,59 +1,114 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ✂️ BarberBrody
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+BarberBrody is a modern, full-stack barbershop marketplace and management system. It connects customers with local barbershops while providing shop owners with a powerful dashboard to manage their services, barbers, and appointments.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### For Customers
+- **🔍 Smart Search:** Find barbershops by name, location, or services.
+- **📅 Easy Booking:** Seamlessly book appointments with your preferred barbers.
+- **🤖 AI Consultant:** Get personalized hair style advice from our built-in AI assistant.
+- **📍 Location Integration:** Interactive maps using Leaflet to find shops near you.
+- **⭐ Ratings & Reviews:** Read and leave feedback for services.
+- **📱 Responsive Design:** Optimized for both mobile and desktop experiences.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### For Barbershop Owners (Admin)
+- **📊 Analytics Dashboard:** Monitor bookings and shop performance at a glance.
+- **💇 Service Management:** Create and organize service categories and individual offerings.
+- **👥 Staff Management:** Manage barber profiles and schedules.
+- **📅 Booking Management:** View and update incoming appointments.
+- **⚙️ Profile Customization:** Fully customize your shop's public profile and branding.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ Tech Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Backend
+- **Framework:** [Laravel 12](https://laravel.com/)
+- **Authentication:** [Laravel Sanctum](https://laravel.com/docs/sanctum) & [Socialite](https://laravel.com/docs/socialite) (OAuth)
+- **Database:** MySQL
+- **Tooling:** Composer, Artisan, PHPUnit
 
-## Laravel Sponsors
+### Frontend
+- **Library:** [React 19](https://react.dev/)
+- **Language:** TypeScript
+- **Build Tool:** [Vite 6](https://vitejs.dev/)
+- **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
+- **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
+- **Routing:** [React Router 7](https://reactrouter.com/)
+- **UI Components:** Radix UI, Lucide Icons, Framer Motion
+- **Maps:** Leaflet & React-Leaflet
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## 📦 Installation & Setup
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Prerequisites
+- PHP 8.2+
+- Node.js & npm/pnpm
+- Composer
+- MySQL
 
-## Contributing
+### 1. Backend Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd barbershop
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Install PHP dependencies
+composer install
 
-## Code of Conduct
+# Set up environment variables
+cp .env.example .env
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Generate application key
+php artisan key:generate
 
-## Security Vulnerabilities
+# Run migrations and seeders
+php artisan migrate --seed
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Start the Laravel server
+php artisan serve
+```
 
-## License
+### 2. Frontend Setup
+```bash
+cd frontend
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Install JavaScript dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+---
+
+## 🗺️ Project Structure
+
+```text
+├── app/                # Laravel Core (Models, Controllers, Policies)
+├── config/             # Backend Configuration
+├── database/           # Migrations, Factories, and Seeders
+├── frontend/           # React Frontend Source
+│   ├── src/
+│   │   ├── app/        # Routes and Layouts
+│   │   ├── components/ # Reusable UI Components
+│   │   ├── pages/      # Feature-specific Pages
+│   │   ├── services/   # API Communication (Axios)
+│   │   ├── store/      # Zustand State Management
+│   │   └── types/      # TypeScript Definitions
+├── routes/             # API and Web Routes
+└── public/             # Static Assets
+```
+
+---
+
+## 🧪 Testing
+
+Run backend tests using PHPUnit:
+```bash
+php artisan test
+```
