@@ -1,9 +1,10 @@
 import { Outlet, Link, useLocation } from "react-router";
-import { Scissors, Calendar, Search, Menu, X, Sparkles } from "lucide-react";
+import { Scissors, Calendar, Search, Menu, X, Sparkles, LogOut, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { FloatingChatButton } from "./floating-chat-button";
 import { SmartChatbotWidget } from "./smart-chatbot-widget";
 import useAuthStore from "../../store/authStore";
+import { UserMenu } from "./user-menu";
 
 export function Layout() {
   const location = useLocation();
@@ -13,6 +14,7 @@ export function Layout() {
 
   const handleLogout = async () => {
     await logout();
+    setMobileMenuOpen(false);
   };
 
   const navItems = [
@@ -84,23 +86,7 @@ export function Layout() {
             {/* Auth Buttons (Desktop) */}
             <div className="hidden md:flex items-center gap-4">
               {user ? (
-                <>
-                  {user?.role === "barbershop" && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                      Dashboard
-                    </Link>
-                  )}
-
-                  <button
-                    className="bg-red-500 py-2 px-4 rounded-md cursor-pointer"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
-                </>
+                <UserMenu />
               ) : (
                 <>
                   <Link
@@ -153,20 +139,45 @@ export function Layout() {
                   </Link>
                 );
               })}
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-3 border border-border text-foreground rounded-lg text-center hover:bg-muted transition-colors"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg text-center"
-              >
-                Sign Up
-              </Link>
+              
+              {user ? (
+                <>
+                  {user.role === "barbershop" && (
+                    <Link
+                      to="/admin/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors text-left"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Log Out</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 border border-border text-foreground rounded-lg text-center hover:bg-muted transition-colors"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-3 bg-primary text-primary-foreground rounded-lg text-center"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </nav>
           )}
         </div>
