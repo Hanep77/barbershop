@@ -1,17 +1,16 @@
 import { Outlet, Link, useLocation } from "react-router";
-import { 
-  Scissors, 
-  Calendar, 
-  Search, 
-  Menu, 
-  X, 
-  Sparkles, 
-  LogOut, 
+import {
+  Scissors,
+  Calendar,
+  Search,
+  Menu,
+  X,
+  Sparkles,
+  LogOut,
   LayoutDashboard,
   Settings,
   Bell,
   Heart,
-  User as UserIcon
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FloatingChatButton } from "./floating-chat-button";
@@ -57,11 +56,11 @@ export function Layout() {
 
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
     : "";
 
   const isActive = (path: string) => {
@@ -95,11 +94,10 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2 transition-colors ${
-                      isActive(item.path)
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`flex items-center gap-2 transition-colors ${isActive(item.path)
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-normal text-sm">{item.label}</span>
@@ -151,7 +149,7 @@ export function Layout() {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 top-[81px] bg-background z-50 overflow-y-auto"
           style={{ height: "calc(100vh - 81px)" }}
         >
@@ -208,9 +206,8 @@ export function Layout() {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
-                        active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                      }`}
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                        }`}
                     >
                       <Icon className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`} />
                       <span className="font-medium text-lg">{item.label}</span>
@@ -219,9 +216,8 @@ export function Layout() {
                 })}
                 <Link
                   to="/my-bookings"
-                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
-                    isActive("/my-bookings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                  }`}
+                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/my-bookings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                    }`}
                 >
                   <Calendar className={`w-6 h-6 ${isActive("/my-bookings") ? "text-primary" : "text-muted-foreground"}`} />
                   <span className="font-medium text-lg">My Bookings</span>
@@ -237,9 +233,8 @@ export function Layout() {
                   {user.role === "barbershop" && (
                     <Link
                       to="/admin/dashboard"
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
-                        isActive("/admin/dashboard") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
-                      }`}
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/admin/dashboard") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                        }`}
                     >
                       <LayoutDashboard className={`w-6 h-6 ${isActive("/admin/dashboard") ? "text-primary" : "text-muted-foreground"}`} />
                       <div className="flex flex-col">
