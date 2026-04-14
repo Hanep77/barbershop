@@ -41,8 +41,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     },
     {
       icon: Users,
-      label: "Barbers",
-      path: "/admin/barbers",
+      label: "Capsters",
+      path: "/admin/capsters",
     },
     {
       icon: Calendar,

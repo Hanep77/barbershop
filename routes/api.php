@@ -28,12 +28,15 @@ Route::middleware("auth:sanctum")->group(function () {
 
         Route::prefix("/barbershop")->group(function () {
             Route::get('/', [PartnerBarbershopController::class, 'index']);
-            Route::get("/services", [ServiceController::class, "index"]);
-            Route::post("/services", [ServiceController::class, "store"]);
+            Route::put('/', [PartnerBarbershopController::class, 'update']);
+            // Route::get("/services", [ServiceController::class, "index"]);
+            // Route::post("/services", [ServiceController::class, "store"]);
+            Route::resource('/services', ServiceController::class);
 
             Route::prefix("/service-categories")->group(function () {
-                Route::get('/', [ServiceCategoryController::class, 'index']);
-                Route::post('/', [ServiceCategoryController::class, 'store']);
+                // Route::get('/', [ServiceCategoryController::class, 'index']);
+                // Route::post('/', [ServiceCategoryController::class, 'store']);
+                Route::resource('/', ServiceCategoryController::class);
             });
         });
     });

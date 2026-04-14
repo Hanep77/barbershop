@@ -4,7 +4,7 @@ import useAuthStore from "../store/authStore";
 const AdminOnly = () => {
   const { user } = useAuthStore();
 
-  if (user?.role !== "barbershop") return <Navigate to="/" replace />;
+  if (user?.role !== "barbershop") return <Navigate to="/login" replace />;
 
   return <Outlet />;
 };

@@ -33,7 +33,9 @@ import { Badge } from "../../components/ui/badge";
 import { toast } from "sonner";
 import {
   adminGetBarbershopServices,
-  adminCreateServiceCategory,
+  adminCreateService,
+  adminUpdateService,
+  adminDeleteService,
 } from "../../../services/service";
 import { adminGetServiceCategories } from "../../../services/serviceCategory";
 import type { CreateServiceRequest, Service } from "../../../types/services";
@@ -91,32 +93,26 @@ export function AdminServices() {
     });
   };
 
-  // const handleSave = () => {
-  //   if (
-  //     !formData.name ||
-  //     !formData.price ||
-  //     !formData.duration_minutes ||
-  //     !formData.category_id
-  //   ) {
-  //     toast.error("Please fill in all required fields");
-  //     return;
-  //   }
-
-  //   if (editingService) {
-  //     // Update existing service
-  //     setServices(
-  //       services?.map((s) =>
-  //         s.id === editingService.id ? { ...editingService, ...formData } : s,
-  //       ),
-  //     );
-  //     toast.success("Service updated successfully!");
-  //   }
-  //   handleCloseDialog();
-  // };
-
-  const handleDelete = (id: string) => {
-    setServices(services.filter((s) => s.id !== id));
-    toast.success("Service deleted successfully!");
+  const handleDelete = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this service? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    await adminDeleteService(id).then(() => {
+      setServices(services.filter((s) => s.id !== id));
+      toast.success("Service deleted successfully!");
+    }).catch((err: unknown) => {
+      if (err instanceof AxiosError) {
+        toast.error(err.response?.data?.message || "Failed to delete service");
+        console.log(err.response);
+        return;
+      }
+      toast.error("Failed to delete service");
+      console.log(err);
+    });
   };
 
   const fetchServices = async () => {
@@ -160,21 +156,37 @@ export function AdminServices() {
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
-    const payload: CreateServiceRequest = {
-      name: formData.name as string,
-      price: Number(formData.price),
-      duration_minutes: Number(formData.duration_minutes),
-      description: formData.description as string,
-      category_id: formData.category_id as string,
-    };
-    console.log(payload);
-    await adminCreateServiceCategory(payload)
+
+    await adminCreateService(formData as CreateServiceRequest)
       .then((res) => {
         const { service } = res.data;
         console.log(service);
         setServices((prev) => [service, ...(prev || [])]);
         toast.success("Service added successfully!");
         handleCloseDialog();
+      })
+      .catch((err: unknown) => {
+        if (err instanceof AxiosError) {
+          toast.error(err.response?.data?.message || "Failed to save service");
+          console.log(err.response);
+          return;
+        }
+        toast.error("Failed to save service");
+        console.log(err);
+      });
+  };
+
+  const handleSave = async (e: SubmitEvent) => {
+    e.preventDefault();
+    await adminUpdateService(formData as Service, editingService?.id || "")
+      .then((res) => {
+        const { service } = res.data;
+        setServices((prev) =>
+          prev?.map((s) => (s.id === service.id ? service : s)),
+        );
+        toast.success("Service updated successfully!");
+        handleCloseDialog();
+        console.log(service);
       })
       .catch((err: unknown) => {
         if (err instanceof AxiosError) {
@@ -316,7 +328,9 @@ export function AdminServices() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleOpenDialog(service)}
+                          onClick={() => {
+                            handleOpenDialog(service);
+                          }}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -346,7 +360,7 @@ export function AdminServices() {
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={editingService ? handleSave : handleSubmit}>
             <DialogHeader>
               <DialogTitle>
                 {editingService ? "Edit Service" : "Add New Service"}
@@ -380,6 +394,7 @@ export function AdminServices() {
                   </Badge>
                 </Label>
                 <Select
+                  name="category_id"
                   value={formData.category_id}
                   onValueChange={(value) =>
                     setFormData({ ...formData, category_id: value })

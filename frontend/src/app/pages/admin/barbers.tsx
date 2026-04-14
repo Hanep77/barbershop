@@ -1,10 +1,23 @@
 import { useState } from "react";
-import { Users, Plus, Edit, Mail, Phone, Award, CheckCircle, XCircle } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Edit,
+  Mail,
+  Phone,
+  Award,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Switch } from "../../components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "../../components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -83,13 +96,13 @@ export function AdminBarbers() {
       barbers.map((barber) =>
         barber.id === id
           ? { ...barber, isAvailable: !barber.isAvailable }
-          : barber
-      )
+          : barber,
+      ),
     );
     const barber = barbers.find((b) => b.id === id);
     if (barber) {
       toast.success(
-        `${barber.name} is now ${!barber.isAvailable ? "available" : "unavailable"}`
+        `${barber.name} is now ${!barber.isAvailable ? "available" : "unavailable"}`,
       );
     }
   };
@@ -137,8 +150,8 @@ export function AdminBarbers() {
       // Update existing barber
       setBarbers(
         barbers.map((b) =>
-          b.id === editingBarber.id ? { ...editingBarber, ...formData } : b
-        )
+          b.id === editingBarber.id ? { ...editingBarber, ...formData } : b,
+        ),
       );
       toast.success("Barber profile updated successfully!");
     } else {
@@ -171,14 +184,14 @@ export function AdminBarbers() {
         <div className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-foreground mb-1">Barbers Management</h1>
+              <h1 className="text-foreground mb-1">Capster Management</h1>
               <p className="text-sm text-muted-foreground">
                 Manage your team and their availability status
               </p>
             </div>
             <Button onClick={() => handleOpenDialog()}>
               <Plus className="w-4 h-4 mr-2" />
-              Add Barber
+              Add Capster
             </Button>
           </div>
         </div>
@@ -198,8 +211,8 @@ export function AdminBarbers() {
                 </h4>
                 <p className="text-sm text-muted-foreground">
                   Toggle barber availability to control their booking slots in
-                  real-time. When a barber is marked as unavailable, customers won't
-                  see their time slots in the booking flow.
+                  real-time. When a barber is marked as unavailable, customers
+                  won't see their time slots in the booking flow.
                 </p>
               </div>
             </div>
@@ -423,9 +436,7 @@ export function AdminBarbers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="specialties">
-                Specialties (comma-separated)
-              </Label>
+              <Label htmlFor="specialties">Specialties (comma-separated)</Label>
               <Input
                 id="specialties"
                 value={formData.specialties?.join(", ")}

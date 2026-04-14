@@ -1,5 +1,8 @@
 import api from "../lib/axios";
-import type { CreateBarbershopInput } from "../types/barbershop";
+import type {
+  CreateBarbershopInput,
+  UpdateBarbershopInput,
+} from "../types/barbershop";
 import { getCsrf } from "./auth";
 
 export const createBarbershop = async (
@@ -12,4 +15,9 @@ export const createBarbershop = async (
 export const getBarbershop = async () => {
   await getCsrf();
   return await api.get("/api/partner/barbershop");
+};
+
+export const updateBarbershop = async (data: UpdateBarbershopInput) => {
+  await getCsrf();
+  return api.put("/api/partner/barbershop", data);
 };

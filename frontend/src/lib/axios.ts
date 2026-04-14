@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type AxiosInstance } from "axios";
 import { logout } from "../services/auth";
+import useAuthStore from "../store/authStore";
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -16,7 +17,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      window.location.href = "/login";
+      useAuthStore.getState().setUser(null);
     }
     return Promise.reject(error);
   },

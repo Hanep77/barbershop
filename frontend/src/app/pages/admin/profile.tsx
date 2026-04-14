@@ -6,17 +6,21 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { toast } from "sonner";
-import { getBarbershop } from "../../../services/barbershop";
+import { getBarbershop, updateBarbershop } from "../../../services/barbershop";
 import type { Barbershop } from "../../../types/barbershop";
 import type { User } from "../../../types/auth";
+import { AxiosError } from "axios";
 
 interface BarbershopProfile {
-  barbershop: Barbershop;
-  user: Partial<User>;
+  barbershop?: Barbershop;
+  user?: Partial<User>;
 }
 
 export function AdminProfile() {
-  const [profile, setProfile] = useState<BarbershopProfile | null>(null);
+  const [profile, setProfile] = useState<BarbershopProfile | null>({
+    barbershop: undefined,
+    user: undefined,
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [gallery, setGallery] = useState<string[]>([
     "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -24,9 +28,41 @@ export function AdminProfile() {
     "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwdG9vbHN8ZW58MXx8fHwxNzczODYyMzE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
   ]);
 
-  const handleSave = () => {
-    // In a real app, this would make an API call
-    toast.success("Profile updated successfully!");
+  const handleSave = async () => {
+    const formElement = document.getElementById(
+      "profileBarbershopForm",
+    ) as HTMLFormElement;
+    const formData = new FormData(formElement);
+    const data = Object.fromEntries(formData.entries());
+
+    const payload = {
+      ...data,
+      latitude: profile?.barbershop?.latitude || "",
+      longitude: profile?.barbershop?.longitude || "",
+    };
+
+    await updateBarbershop(payload)
+      .then((res) => {
+        const { barbershop } = res.data;
+        setProfile((prev) => ({
+          ...prev,
+          barbershop: barbershop,
+        }));
+        setIsEditing(false);
+        toast.success("Profile updated successfully!");
+      })
+      .catch((err) => {
+        if (err instanceof AxiosError) {
+          toast.error(err.response?.data.message || "Failed to update profile");
+          console.log(err.response);
+          return;
+        }
+        toast.error("An unexpected error occurred");
+        console.error(err);
+      });
+  };
+
+  const handleCancel = () => {
     setIsEditing(false);
   };
 
@@ -36,7 +72,7 @@ export function AdminProfile() {
 
   const getBarbershopInfo = async () => {
     const data = await getBarbershop();
-    console.log(data);
+    // console.log(data);
     const { barbershop, user } = data.data;
     setProfile({ barbershop, user });
   };
@@ -85,16 +121,23 @@ export function AdminProfile() {
             <div className="p-6 border-b border-border">
               <h3 className="text-card-foreground">Basic Information</h3>
             </div>
-            <div className="p-6 space-y-6">
+            <form className="p-6 space-y-6" id="profileBarbershopForm">
               <div className="space-y-2">
                 <Label htmlFor="name">Business Name</Label>
                 <div className="flex items-center gap-3">
                   <Store className="w-5 h-5 text-muted-foreground" />
                   <Input
                     id="name"
+                    name="name"
                     value={profile?.barbershop?.name}
                     onChange={(e) =>
-                      setProfile({ ...profile, name: e.target.value })
+                      setProfile({
+                        ...profile,
+                        barbershop: {
+                          ...(profile?.barbershop as Barbershop),
+                          name: e.target.value,
+                        },
+                      })
                     }
                     disabled={!isEditing}
                     className="flex-1 text-foreground"
@@ -106,9 +149,16 @@ export function AdminProfile() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  value={profile?.barbershop?.description}
+                  name="description"
+                  value={profile?.barbershop?.description as string}
                   onChange={(e) =>
-                    setProfile({ ...profile, description: e.target.value })
+                    setProfile({
+                      ...profile,
+                      barbershop: {
+                        ...(profile?.barbershop as Barbershop),
+                        description: e.target.value,
+                      },
+                    })
                   }
                   disabled={!isEditing}
                   rows={4}
@@ -127,8 +177,15 @@ export function AdminProfile() {
                   <Input
                     id="address"
                     value={profile?.barbershop?.address}
+                    name="address"
                     onChange={(e) =>
-                      setProfile({ ...profile, address: e.target.value })
+                      setProfile({
+                        ...profile,
+                        barbershop: {
+                          ...(profile?.barbershop as Barbershop),
+                          address: e.target.value,
+                        },
+                      })
                     }
                     disabled={!isEditing}
                     className="flex-1 text-foreground"
@@ -144,8 +201,15 @@ export function AdminProfile() {
                     <Input
                       id="phone"
                       value={profile?.barbershop?.phone_number}
+                      name="phone_number"
                       onChange={(e) =>
-                        setProfile({ ...profile, phone: e.target.value })
+                        setProfile({
+                          ...profile,
+                          barbershop: {
+                            ...(profile?.barbershop as Barbershop),
+                            phone_number: e.target.value,
+                          },
+                        })
                       }
                       disabled={!isEditing}
                       className="flex-1 text-foreground"
@@ -160,9 +224,13 @@ export function AdminProfile() {
                     <Input
                       id="email"
                       type="email"
+                      name="email"
                       value={profile?.user?.email}
                       onChange={(e) =>
-                        setProfile({ ...profile, email: e.target.value })
+                        setProfile({
+                          ...profile,
+                          user: { ...profile?.user, email: e.target.value },
+                        })
                       }
                       disabled={!isEditing}
                       className="flex-1 text-foreground"
@@ -170,7 +238,7 @@ export function AdminProfile() {
                   </div>
                 </div>
               </div>
-            </div>
+            </form>
           </Card>
 
           {/* Operating Hours */}

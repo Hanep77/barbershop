@@ -53,12 +53,19 @@ class ServiceController extends Controller
             "name" => ["required", "sometimes", "max:100"],
             "price" => ["required", "sometimes"],
             "duration_minutes" => ["required", "sometimes"],
+            "category_id" => ["required", "sometimes", "exists:service_categories,id"],
             "is_active" => ["nullable"],
+            "description" => ["nullable", "max:255", "string"],
         ]);
 
         $service->update($validated);
 
-        return response()->json($service);
+        $service->load("category");
+
+
+        return response()->json([
+            "service" => $service->only(["id",   "name",  "price",  "description", "duration_minutes", "is_active", "category"]),
+        ], 200);
     }
 
     public function destroy(Service $service)

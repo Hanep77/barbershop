@@ -59,9 +59,39 @@ class PartnerBarbershopController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        try {
+            $findUserBarbershop = $request->user()->barbershop()->first();
+
+            if (!$findUserBarbershop) {
+                return response()->json([
+                    "message" => "Barbershop not found for the user"
+                ], 404);
+            }
+
+            $validatedData = $request->validate([
+                "name" => "required|string|max:255",
+                "address" => "required|string|max:255",
+                "phone_number" => "required|string|max:20",
+                "description" => "nullable|string",
+                "map_url" => "nullable|url",
+                "latitude" => "required|string",
+                "longitude" => "required|string",
+            ]);
+
+            $findUserBarbershop->update($validatedData);
+
+            return response()->json([
+                "message" => "Barbershop updated successfully",
+                "barbershop" => $findUserBarbershop
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to update barbershop",
+                "error" => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

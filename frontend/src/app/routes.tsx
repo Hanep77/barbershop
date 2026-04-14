@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
                 Component: AdminServiceCategory,
               },
               { path: "services", Component: AdminServices },
-              { path: "barbers", Component: AdminBarbers },
+              { path: "capsters", Component: AdminBarbers },
               { path: "bookings", Component: AdminBookings },
               { path: "settings", Component: AdminSettings },
             ],
