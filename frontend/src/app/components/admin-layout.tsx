@@ -8,6 +8,7 @@ import {
   Settings,
   LogOut,
   Store,
+  PocketKnife,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -27,6 +28,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       icon: Store,
       label: "Shop Profile",
       path: "/admin/profile",
+    },
+    {
+      icon: PocketKnife,
+      label: "Service Categories",
+      path: "/admin/service-categories",
     },
     {
       icon: Scissors,

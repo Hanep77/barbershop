@@ -3,6 +3,7 @@
 use App\Http\Controllers\BarbershopController;
 use App\Http\Controllers\PartnerBarbershopController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,9 +25,17 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);
 
     Route::middleware("role:barbershop")->prefix('/partner')->group(function () {
-        Route::get('/barbershop', [PartnerBarbershopController::class, 'index']);
-        Route::get("/barbershop/services", [ServiceController::class, "index"]);
-        Route::post("/barbershop/services", [ServiceController::class, "store"]);
+
+        Route::prefix("/barbershop")->group(function () {
+            Route::get('/', [PartnerBarbershopController::class, 'index']);
+            Route::get("/services", [ServiceController::class, "index"]);
+            Route::post("/services", [ServiceController::class, "store"]);
+
+            Route::prefix("/service-categories")->group(function () {
+                Route::get('/', [ServiceCategoryController::class, 'index']);
+                Route::post('/', [ServiceCategoryController::class, 'store']);
+            });
+        });
     });
 
     Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);

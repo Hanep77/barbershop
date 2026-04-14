@@ -159,13 +159,25 @@ export function Layout() {
               {user ? (
                 <div className="flex items-center gap-4">
                   <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-sm">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt={user.name} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">{initials}</AvatarFallback>
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-lg text-foreground truncate">{user.name}</span>
-                      <Badge variant={user.role === "barbershop" ? "default" : "secondary"} className="text-[10px] h-4.5 px-1.5 uppercase tracking-wider font-bold">
+                      <span className="font-bold text-lg text-foreground truncate">
+                        {user.name}
+                      </span>
+                      <Badge
+                        variant={
+                          user.role === "barbershop" ? "default" : "secondary"
+                        }
+                        className="text-[10px] h-4.5 px-1.5 uppercase tracking-wider font-bold"
+                      >
                         {user.role}
                       </Badge>
                     </div>
@@ -176,7 +188,9 @@ export function Layout() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  <p className="text-muted-foreground font-light text-sm">Welcome to BarberBrody</p>
+                  <p className="text-muted-foreground font-light text-sm">
+                    Welcome to BarberBrody
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <Link
                       to="/login"
@@ -197,7 +211,9 @@ export function Layout() {
 
             {/* Navigation Links */}
             <div className="px-4 py-6">
-              <p className="px-4 mb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Explore</p>
+              <p className="px-4 mb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Explore
+              </p>
               <div className="space-y-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
@@ -206,20 +222,28 @@ export function Layout() {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted/50"
                         }`}
                     >
-                      <Icon className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                      <Icon
+                        className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`}
+                      />
                       <span className="font-medium text-lg">{item.label}</span>
                     </Link>
                   );
                 })}
                 <Link
                   to="/my-bookings"
-                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/my-bookings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/my-bookings")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted/50"
                     }`}
                 >
-                  <Calendar className={`w-6 h-6 ${isActive("/my-bookings") ? "text-primary" : "text-muted-foreground"}`} />
+                  <Calendar
+                    className={`w-6 h-6 ${isActive("/my-bookings") ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <span className="font-medium text-lg">My Bookings</span>
                 </Link>
               </div>
@@ -228,18 +252,28 @@ export function Layout() {
             {/* User Account Section */}
             {user && (
               <div className="px-4 py-6 border-t border-border/20">
-                <p className="px-4 mb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">My Account</p>
+                <p className="px-4 mb-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  My Account
+                </p>
                 <div className="space-y-1">
                   {user.role === "barbershop" && (
                     <Link
                       to="/admin/dashboard"
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/admin/dashboard") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50"
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/admin/dashboard")
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50"
                         }`}
                     >
-                      <LayoutDashboard className={`w-6 h-6 ${isActive("/admin/dashboard") ? "text-primary" : "text-muted-foreground"}`} />
+                      <LayoutDashboard
+                        className={`w-6 h-6 ${isActive("/admin/dashboard") ? "text-primary" : "text-muted-foreground"}`}
+                      />
                       <div className="flex flex-col">
-                        <span className="font-medium text-primary">Dashboard</span>
-                        <span className="text-xs text-muted-foreground">Partner portal</span>
+                        <span className="font-medium text-primary">
+                          Dashboard
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Partner portal
+                        </span>
                       </div>
                     </Link>
                   )}
@@ -253,7 +287,9 @@ export function Layout() {
                   </button>
                   <button className="flex items-center gap-4 px-4 py-4 rounded-xl text-muted-foreground hover:bg-muted transition-all w-full text-left">
                     <Settings className="w-6 h-6" />
-                    <span className="font-medium text-lg">Account Settings</span>
+                    <span className="font-medium text-lg">
+                      Account Settings
+                    </span>
                   </button>
                 </div>
               </div>
@@ -334,7 +370,9 @@ export function Layout() {
             </div>
 
             <div>
-              <h4 className="font-bold text-foreground mb-4">For Barbershops</h4>
+              <h4 className="font-bold text-foreground mb-4">
+                For Barbershops
+              </h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link
@@ -359,7 +397,10 @@ export function Layout() {
               <h4 className="font-bold text-foreground mb-4">Contact</h4>
               <ul className="space-y-2 text-sm text-muted-foreground font-light">
                 <li>
-                  <a href="mailto:support@barberbrody.com" className="hover:text-primary transition-colors">
+                  <a
+                    href="mailto:support@barberbrody.com"
+                    className="hover:text-primary transition-colors"
+                  >
                     support@barberbrody.com
                   </a>
                 </li>

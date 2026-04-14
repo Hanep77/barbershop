@@ -13,7 +13,9 @@ class ServiceController extends Controller
     {
         $barbershop = $request->user()->barbershop;
 
-        return response()->json($barbershop->services, 200);
+        $services = $barbershop->services()->with("category")->get();
+
+        return response()->json($services, 200);
     }
 
     public function store(Request $request)
@@ -25,13 +27,22 @@ class ServiceController extends Controller
         $validated = $request->validate([
             "name" => ["required", "max:100"],
             "price" => ["required"],
+            "description" => ["nullable", "max:255", "string"],
             "duration_minutes" => ["required"],
             "is_active" => ["nullable"],
+            "category_id" => ["required", "exists:service_categories,id"],
         ]);
+
+        $validated["barbershop_id"] = $barbershop->id;
 
         $service = $barbershop->services()->create($validated);
 
-        return response()->json($service);
+        $service->load("category");
+
+        return response()->json([
+            "message" => "Service created successfully",
+            "service" => $service
+        ], 201);
     }
 
     public function update(Request $request, Service $service)
