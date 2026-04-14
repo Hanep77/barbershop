@@ -3,17 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\Capster;
-use App\Http\Requests\StoreCapsterRequest;
-use App\Http\Requests\UpdateCapsterRequest;
+use Illuminate\Http\Request;
 
 class CapsterController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        try {
+            $barbershop = $request->user()->barbershop;
+            if (!$barbershop) {
+                return response()->json([
+                    "message" => "Barbershop not found for the authenticated user",
+                ], 404);
+            }
+
+            $capsters = Capster::where("barbershop_id", $barbershop->id)->get();
+
+            return response()->json([
+                "message" => "Capsters fetched successfully",
+                "capsters" => $capsters,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to fetch capsters",
+                "error" => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -27,9 +45,48 @@ class CapsterController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCapsterRequest $request)
+    public function store(Request $request)
     {
-        //
+        try {
+
+            $barbershop = $request->user()->barbershop;
+            if (!$barbershop) {
+                return response()->json([
+                    "message" => "Barbershop not found for the authenticated user",
+                ], 404);
+            }
+
+
+            $capster = $request->validate([
+                "name" => "required|string|max:255",
+                "is_available" => "boolean",
+                "title" => "string|max:255",
+                "experience" => "string|max:255",
+                "rating" => "numeric|min:0|max:5",
+                "specialties" => "array",
+                "specialties*" => "array",
+                "bio" => "string",
+                "phone" => "string|max:20",
+                "image" => "string|max:255",
+            ]);
+
+            $capster["barbershop_id"] = $barbershop->id;
+            $capster["rating"] = $capster["rating"] ?? 0.0;
+            $capster["specialties"] = json_encode($capster["specialties"] ?? []);
+            $capster["image"] = $capster["image"] ?? "https://ui-avatars.com/api/?name=" . urlencode($capster["name"]);
+
+            $newCapster = Capster::create($capster);
+
+            return response()->json([
+                "message" => "Capster created successfully",
+                "capster" => $newCapster,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to create capster",
+                "error" => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -51,7 +108,7 @@ class CapsterController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateCapsterRequest $request, Capster $capster)
+    public function update(Request $request, Capster $capster)
     {
         //
     }
@@ -62,5 +119,23 @@ class CapsterController extends Controller
     public function destroy(Capster $capster)
     {
         //
+    }
+
+    public function changeAvailability(Request $request, Capster $capster)
+    {
+        try {
+            $capster->is_available = !$capster->is_available;
+            $capster->save();
+
+            return response()->json([
+                "message" => "Capster availability updated successfully",
+                "capster" => $capster,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to update capster availability",
+                "error" => $e->getMessage(),
+            ], 500);
+        }
     }
 }
