@@ -101,18 +101,22 @@ export function AdminServices() {
     ) {
       return;
     }
-    await adminDeleteService(id).then(() => {
-      setServices(services.filter((s) => s.id !== id));
-      toast.success("Service deleted successfully!");
-    }).catch((err: unknown) => {
-      if (err instanceof AxiosError) {
-        toast.error(err.response?.data?.message || "Failed to delete service");
-        console.log(err.response);
-        return;
-      }
-      toast.error("Failed to delete service");
-      console.log(err);
-    });
+    await adminDeleteService(id)
+      .then(() => {
+        setServices(services.filter((s) => s.id !== id));
+        toast.success("Service deleted successfully!");
+      })
+      .catch((err: unknown) => {
+        if (err instanceof AxiosError) {
+          toast.error(
+            err.response?.data?.message || "Failed to delete service",
+          );
+          console.log(err.response);
+          return;
+        }
+        toast.error("Failed to delete service");
+        console.log(err);
+      });
   };
 
   const fetchServices = async () => {
@@ -160,7 +164,7 @@ export function AdminServices() {
     await adminCreateService(formData as CreateServiceRequest)
       .then((res) => {
         const { service } = res.data;
-        console.log(service);
+        // console.log(service);
         setServices((prev) => [service, ...(prev || [])]);
         toast.success("Service added successfully!");
         handleCloseDialog();
@@ -186,7 +190,7 @@ export function AdminServices() {
         );
         toast.success("Service updated successfully!");
         handleCloseDialog();
-        console.log(service);
+        // console.log(service);
       })
       .catch((err: unknown) => {
         if (err instanceof AxiosError) {

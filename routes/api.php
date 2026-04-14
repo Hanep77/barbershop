@@ -18,6 +18,7 @@ Route::post("/login", [UserController::class, "login"]);
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
 
+    // Route::resouece("/barbershop", BarbershopController::class);
     Route::get("/barbershop", [BarbershopController::class, "index"]);
     Route::post("/barbershop", [BarbershopController::class, "store"]);
     Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
@@ -29,15 +30,8 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::prefix("/barbershop")->group(function () {
             Route::get('/', [PartnerBarbershopController::class, 'index']);
             Route::put('/', [PartnerBarbershopController::class, 'update']);
-            // Route::get("/services", [ServiceController::class, "index"]);
-            // Route::post("/services", [ServiceController::class, "store"]);
             Route::resource('/services', ServiceController::class);
-
-            Route::prefix("/service-categories")->group(function () {
-                // Route::get('/', [ServiceCategoryController::class, 'index']);
-                // Route::post('/', [ServiceCategoryController::class, 'store']);
-                Route::resource('/', ServiceCategoryController::class);
-            });
+            Route::resource('/service-categories', ServiceCategoryController::class);
         });
     });
 

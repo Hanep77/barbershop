@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import {
   adminCreateServiceCategory,
   adminGetServiceCategories,
+  adminDeleteServiceCategory,
 } from "../../../services/serviceCategory";
 import type {
   ServiceCategory,
@@ -58,65 +59,68 @@ export function AdminServiceCategory() {
     setFormData({ name: "" });
   };
 
-  //   const handleSave = () => {
-  //     if (!formData.name.trim()) {
-  //       toast.error("Category name is required");
-  //       return;
-  //     }
+  const handleSave = async (e: SubmitEvent) => {
+    e.preventDefault();
+    const payload = formData as CreateServiceCategoryRequest;
 
-  //     if (editingCategory) {
-  //       setCategories((prev) =>
-  //         prev?.map((category) =>
-  //           category?.id === editingCategory?.id
-  //             ? { ...category, name: formData.name.trim() }
-  //             : category,
-  //         ),
-  //       );
-  //       toast.success("Category updated successfully!");
-  //       handleCloseDialog();
-  //       return;
-  //     }
+    await adminCreateServiceCategory(payload)
+      .then((res) => {
+        const { category } = res.data;
+        toast.success("Category updated successfully!");
+        handleCloseDialog();
+        setCategories((prev) => [category, ...(prev || [])]);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof AxiosError) {
+          toast.error(err.response?.data?.message || "Failed to save category");
+          console.log(err?.response);
+          return;
+        }
+        toast.error("Failed to save category");
+        console.log(err);
+      });
+  };
 
-  //     // setCategories((prev) => [newCategory, ...prev]);
-  //     toast.success("Category added successfully!");
-  //     handleCloseDialog();
-  //   };
-
-  const handleDelete = (id: string) => {
-    setCategories((prev) => prev.filter((category) => category?.id !== id));
-    toast.success("Category deleted successfully!");
+  const handleDelete = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this category? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    await adminDeleteServiceCategory(id).then(() => {
+      setCategories((prev) => prev.filter((category) => category?.id !== id));
+      toast.success("Category deleted successfully!");
+    });
   };
 
   const fetchCategories = async () => {
-    try {
-      const response = await adminGetServiceCategories();
-      const payload = response.data;
-      const fetchedCategories = payload?.data || payload?.categories || [];
-      setCategories(fetchedCategories);
-    } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        toast.error(
-          error.response?.data?.message || "Failed to fetch service categories",
-        );
-        return;
-      }
+    await adminGetServiceCategories()
+      .then((res) => {
+        const { categories } = res.data;
+        console.log(categories);
+        setCategories(categories);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof AxiosError) {
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to fetch service categories",
+          );
+          return;
+        }
 
-      toast.error("Failed to fetch service categories");
-    }
+        toast.error("Failed to fetch service categories");
+      });
   };
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    const formData = new FormData(e.target as HTMLFormElement);
-    const payload: CreateServiceCategoryRequest = {
-      name: formData.get("name") as string,
-    };
-
-    await adminCreateServiceCategory(payload)
+    await adminCreateServiceCategory(formData as CreateServiceCategoryRequest)
       .then((res) => {
         const { category } = res.data;
-        // console.log(category);
         setCategories((prev) => [category, ...(prev || [])]);
         toast.success("Category added successfully!");
         handleCloseDialog();
@@ -280,7 +284,7 @@ export function AdminServiceCategory() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={editingCategory ? handleSave : handleSubmit}>
             <div className="space-y-2 py-4">
               <Label htmlFor="category-name">Category Name *</Label>
               <Input

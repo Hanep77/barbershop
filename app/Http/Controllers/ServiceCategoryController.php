@@ -14,6 +14,7 @@ class ServiceCategoryController extends Controller
     {
         try {
             $categories = ServiceCategory::all();
+            $categories->load("services");
             return response()->json([
                 "message" => "Service categories fetched successfully",
                 "categories" => $categories
@@ -82,7 +83,25 @@ class ServiceCategoryController extends Controller
      */
     public function update(Request $request, ServiceCategory $serviceCategory)
     {
-        //
+        try {
+            $request->validate([
+                "name" => "required|string|max:255",
+            ]);
+
+            $serviceCategory->update([
+                "name" => $request->name,
+            ]);
+
+            return response()->json([
+                "message" => "Service category updated successfully",
+                "category" => $serviceCategory
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to update service category",
+                "error" => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -90,6 +109,17 @@ class ServiceCategoryController extends Controller
      */
     public function destroy(ServiceCategory $serviceCategory)
     {
-        //
+        try {
+            $serviceCategory->delete();
+
+            return response()->json([
+                "message" => "Service category deleted successfully"
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                "message" => "Failed to delete service category",
+                "error" => $e->getMessage()
+            ], 500);
+        }
     }
 }
