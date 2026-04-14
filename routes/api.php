@@ -5,6 +5,7 @@ use App\Http\Controllers\PartnerBarbershopController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CapsterController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,7 @@ Route::middleware("auth:sanctum")->group(function () {
             Route::put('/', [PartnerBarbershopController::class, 'update']);
             Route::resource('/services', ServiceController::class);
             Route::resource('/service-categories', ServiceCategoryController::class);
+            Route::resource('/capsters', CapsterController::class);
         });
     });
 

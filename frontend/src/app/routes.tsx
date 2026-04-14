@@ -14,7 +14,7 @@ import { AdminDashboard } from "./pages/admin/dashboard";
 import { AdminProfile } from "./pages/admin/profile";
 import { AdminServices } from "./pages/admin/services";
 import { AdminServiceCategory } from "./pages/admin/service-category";
-import { AdminBarbers } from "./pages/admin/barbers";
+import { AdminCapsters } from "./pages/admin/capsters";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
 import { RegisterBarbershop } from "./pages/admin/register-barbershop";
@@ -62,7 +62,7 @@ export const router = createBrowserRouter([
                 Component: AdminServiceCategory,
               },
               { path: "services", Component: AdminServices },
-              { path: "capsters", Component: AdminBarbers },
+              { path: "capsters", Component: AdminCapsters },
               { path: "bookings", Component: AdminBookings },
               { path: "settings", Component: AdminSettings },
             ],
