@@ -9,6 +9,7 @@ export interface Barbershop {
   is_active: boolean;
   latitude: string;
   longitude: string;
+  coverImage: string;
   created_at: Date;
   updated_at: Date;
 }

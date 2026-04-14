@@ -1,20 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Search, MapPin, Star, TrendingUp, Scissors, Award, Sparkles } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { barbershops } from "../data/marketplace-data";
+import useBarbershopStore from "../../store/barbershopStore";
+import BarbershopCard from "../components/barbershop-card";
 
 export function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
+  const { barbershops, fetchBarbershops } = useBarbershopStore();
 
-  // Get top rated barbershops
-  const topRated = [...barbershops]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 6);
-
-  // Get recommended (all barbershops for now)
-  const recommended = barbershops;
+  useEffect(() => {
+    fetchBarbershops();
+  }, [])
 
   const categories = [
     { name: "Classic Cuts", icon: Scissors },
@@ -140,50 +138,8 @@ export function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommended.map((barbershop) => (
-              <Link
-                key={barbershop.id}
-                to={`/barbershop/${barbershop.id}`}
-                className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all group"
-              >
-                {/* Cover Image */}
-                <div className="relative h-48 overflow-hidden bg-muted">
-                  <ImageWithFallback
-                    src={barbershop.coverImage}
-                    alt={barbershop.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 right-4 bg-card px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span className="font-bold text-card-foreground text-sm">
-                      {barbershop.rating}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <h3 className="font-bold text-xl text-card-foreground mb-2">
-                    {barbershop.name}
-                  </h3>
-                  
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="font-light text-sm">
-                      {barbershop.location} • {barbershop.distance}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-muted-foreground font-light text-sm">
-                      {barbershop.reviewCount} reviews
-                    </span>
-                    <span className="text-primary font-bold">
-                      {barbershop.priceRange}
-                    </span>
-                  </div>
-                </div>
-              </Link>
+            {barbershops.map((barbershop) => (
+              <BarbershopCard barbershop={barbershop} />
             ))}
           </div>
         </div>
@@ -204,50 +160,8 @@ export function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {topRated.map((barbershop) => (
-            <Link
-              key={barbershop.id}
-              to={`/barbershop/${barbershop.id}`}
-              className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all group"
-            >
-              {/* Cover Image */}
-              <div className="relative h-48 overflow-hidden bg-muted">
-                <ImageWithFallback
-                  src={barbershop.coverImage}
-                  alt={barbershop.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-4 right-4 bg-card px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                  <Star className="w-4 h-4 fill-primary text-primary" />
-                  <span className="font-bold text-card-foreground text-sm">
-                    {barbershop.rating}
-                  </span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="font-bold text-xl text-card-foreground mb-2">
-                  {barbershop.name}
-                </h3>
-                
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="font-light text-sm">
-                    {barbershop.location} • {barbershop.distance}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between mt-4">
-                  <span className="text-muted-foreground font-light text-sm">
-                    {barbershop.reviewCount} reviews
-                  </span>
-                  <span className="text-primary font-bold">
-                    {barbershop.priceRange}
-                  </span>
-                </div>
-              </div>
-            </Link>
+          {barbershops.map((barbershop) => (
+            <BarbershopCard barbershop={barbershop} />
           ))}
         </div>
       </section>
