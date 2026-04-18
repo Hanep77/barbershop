@@ -1,4 +1,4 @@
-import { useState, useEffect, type SubmitEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   Users,
   Plus,
@@ -44,6 +44,7 @@ export function AdminCapsters() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [formData, setFormData] = useState<Partial<Barber> | null>(null);
+  const [specialtiesInput, setSpecialtiesInput] = useState("");
 
   const handleToggleAvailability = async (id: string) => {
     setBarbers(
@@ -65,9 +66,11 @@ export function AdminCapsters() {
     if (barber) {
       setEditingBarber(barber);
       setFormData(barber);
+      setSpecialtiesInput(barber.specialties?.join(", ") ?? "");
     } else {
       setEditingBarber(null);
-      setFormData(null);
+      setFormData({});
+      setSpecialtiesInput("");
     }
     setIsDialogOpen(true);
   };
@@ -76,9 +79,10 @@ export function AdminCapsters() {
     setIsDialogOpen(false);
     setEditingBarber(null);
     setFormData(null);
+    setSpecialtiesInput("");
   };
 
-  const handleSubmit = async (e: SubmitEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     console.log(formData);
 
@@ -103,7 +107,7 @@ export function AdminCapsters() {
       });
   };
 
-  const handleSave = async (e: SubmitEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
 
     await adminUpdateCapster(
@@ -224,11 +228,10 @@ export function AdminCapsters() {
             <Card key={barber.id} className="bg-card overflow-hidden">
               {/* Availability Banner */}
               <div
-                className={`px-4 py-2 flex items-center justify-between ${
-                  barber.is_available
+                className={`px-4 py-2 flex items-center justify-between ${barber.is_available
                     ? "bg-green-500/10 border-b border-green-500/20"
                     : "bg-red-500/10 border-b border-red-500/20"
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   {barber.is_available ? (
@@ -237,9 +240,8 @@ export function AdminCapsters() {
                     <XCircle className="w-4 h-4 text-red-500" />
                   )}
                   <span
-                    className={`text-xs ${
-                      barber.is_available ? "text-green-500" : "text-red-500"
-                    }`}
+                    className={`text-xs ${barber.is_available ? "text-green-500" : "text-red-500"
+                      }`}
                   >
                     {barber.is_available ? "Available" : "Unavailable"}
                   </span>
@@ -292,7 +294,7 @@ export function AdminCapsters() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {(JSON.parse(barber.specialties) as string[]).map(
+                  {barber.specialties?.map(
                     (specialty, index) => (
                       <Badge
                         key={index}
@@ -357,7 +359,7 @@ export function AdminCapsters() {
                   <Label htmlFor="name">Full Name *</Label>
                   <Input
                     id="name"
-                    value={formData?.name}
+                    value={formData?.name ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
@@ -369,7 +371,7 @@ export function AdminCapsters() {
                   <Label htmlFor="title">Job Title *</Label>
                   <Input
                     id="title"
-                    value={formData?.title}
+                    value={formData?.title ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
                     }
@@ -383,7 +385,7 @@ export function AdminCapsters() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
-                    value={formData?.phone}
+                    value={formData?.phone ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
@@ -396,7 +398,7 @@ export function AdminCapsters() {
                 <Label htmlFor="experience">Years of Experience</Label>
                 <Input
                   id="experience"
-                  value={formData?.experience}
+                  value={formData?.experience ?? ""}
                   onChange={(e) =>
                     setFormData({ ...formData, experience: e.target.value })
                   }
@@ -408,7 +410,7 @@ export function AdminCapsters() {
                 <Label htmlFor="bio">Biography</Label>
                 <Textarea
                   id="bio"
-                  value={formData?.bio}
+                  value={formData?.bio ?? ""}
                   onChange={(e) =>
                     setFormData({ ...formData, bio: e.target.value })
                   }
@@ -424,17 +426,17 @@ export function AdminCapsters() {
                 </Label>
                 <Input
                   id="specialties"
-                  value={formData?.specialties as string}
-                  onChange={(e) =>
+                  value={specialtiesInput}
+                  onChange={(e) => {
+                    setSpecialtiesInput(e.target.value);
                     setFormData({
                       ...formData,
-                      specialties: e.target.value,
-                      // specialties: e.target.value
-                      //   .split(",")
-                      //   .map((s) => s.trim())
-                      //   .filter(Boolean),
-                    })
-                  }
+                      specialties: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    });
+                  }}
                   placeholder="Classic Cuts, Fades, Beard Grooming"
                 />
               </div>

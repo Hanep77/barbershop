@@ -20,6 +20,7 @@ export default function BarbershopCard({ barbershop }: { barbershop: Barbershop 
         <Star className="w-4 h-4 fill-primary text-primary" />
         <span className="font-bold text-card-foreground text-sm">
           {/* {barbershop.rating} */}
+          {"4.9"}
         </span>
       </div>
     </div>
@@ -41,9 +42,11 @@ export default function BarbershopCard({ barbershop }: { barbershop: Barbershop 
       <div className="flex items-center justify-between mt-4">
         <span className="text-muted-foreground font-light text-sm">
           {/* {barbershop.reviewCount} reviews */}
+          400 reviews
         </span>
         <span className="text-primary font-bold">
           {/* {barbershop.priceRange} */}
+          {barbershop.priceRange}
         </span>
       </div>
     </div>
