@@ -27,3 +27,7 @@ export const adminDeleteService = async (id: string) => {
   await getCsrf();
   return await api.delete(`/api/partner/barbershop/services/${id}`);
 };
+
+export const getServicesByBarbershopId = async (id: string) => {
+  return await api.get(`/api/barbershop/${id}/services`);
+};

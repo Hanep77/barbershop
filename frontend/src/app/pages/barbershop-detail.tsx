@@ -1,29 +1,75 @@
 import { useParams, Link, useNavigate } from "react-router";
-import { MapPin, Phone, Mail, Clock, Star, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { MapPin, Phone, Mail, Clock, Star, ArrowLeft, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import {
-  getBarbershopById,
-  getServicesByBarbershopId,
-  getBarbersByBarbershopId,
-} from "../data/marketplace-data";
+import { getBarbershopById } from "../../services/barbershop";
+import { getServicesByBarbershopId } from "../../services/service";
+import { getCapstersByBarbershopId } from "../../services/capster";
+import type { Barbershop } from "../../types/barbershop";
+import type { Service } from "../../types/services";
+import type { Capster } from "../../types/capster";
 
 export function BarbershopDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"services" | "barbers" | "reviews">("services");
+  const [activeTab, setActiveTab] = useState<"services" | "capsters" | "reviews">("services");
+  const [barbershop, setBarbershop] = useState<Barbershop | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [capsters, setCapsters] = useState<Capster[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const barbershopId = parseInt(id || "0");
-  const barbershop = getBarbershopById(barbershopId);
-  const services = getServicesByBarbershopId(barbershopId);
-  const barbers = getBarbersByBarbershopId(barbershopId);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const shopRes = await getBarbershopById(id);
+        const shopData: Barbershop = shopRes.data.data || shopRes.data;
 
-  if (!barbershop) {
+        setBarbershop(shopData);
+
+        // Use relations if backend already provided them, otherwise fetch separately
+        if (shopData.services) {
+          setServices(shopData.services);
+        } else {
+          const servicesRes = await getServicesByBarbershopId(id);
+          const sData = servicesRes.data.data || servicesRes.data;
+          setServices(Array.isArray(sData) ? sData : []);
+        }
+
+        if (shopData.capsters) {
+          setCapsters(shopData.capsters);
+        } else {
+          const capstersRes = await getCapstersByBarbershopId(id);
+          const cData = capstersRes.data.data || capstersRes.data.capsters || capstersRes.data;
+          setCapsters(Array.isArray(cData) ? cData : []);
+        }
+      } catch (err) {
+        console.error("Error fetching barbershop details:", err);
+        setError("Failed to load barbershop details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !barbershop) {
+    console.log(error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="font-bold text-2xl text-foreground mb-4">
-            Barbershop Not Found
+            {error || "Barbershop Not Found"}
           </h2>
           <Link
             to="/"
@@ -59,6 +105,15 @@ export function BarbershopDetail() {
       comment: "Great experience overall. Booking was easy and the cut was exactly what I wanted.",
     },
   ];
+
+  // Helper to format currency
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
 
   return (
     <div className="min-h-screen">
@@ -101,21 +156,21 @@ export function BarbershopDetail() {
                       <div className="flex items-center gap-2">
                         <Star className="w-5 h-5 fill-primary text-primary" />
                         <span className="font-bold text-xl text-card-foreground">
-                          {barbershop.rating}
+                          {4.9} {/* Default rating since not in backend yet */}
                         </span>
                         <span className="text-muted-foreground font-light">
-                          ({barbershop.reviewCount} reviews)
+                          ({120} reviews)
                         </span>
                       </div>
                       <span className="text-primary font-bold text-lg">
-                        {barbershop.priceRange}
+                        $$
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <p className="text-muted-foreground font-light leading-relaxed mb-6 text-lg">
-                  {barbershop.description}
+                  {barbershop.description || "No description available."}
                 </p>
 
                 {/* Contact Info */}
@@ -127,9 +182,6 @@ export function BarbershopDetail() {
                       <p className="text-muted-foreground font-light text-sm">
                         {barbershop.address}
                       </p>
-                      <p className="text-muted-foreground font-light text-sm">
-                        {barbershop.distance} away
-                      </p>
                     </div>
                   </div>
 
@@ -137,14 +189,12 @@ export function BarbershopDetail() {
                     <Clock className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                     <div>
                       <p className="font-bold text-card-foreground mb-1">Hours</p>
-                      {Object.entries(barbershop.hours).map(([day, hours]) => (
-                        <p
-                          key={day}
-                          className="text-muted-foreground font-light text-sm"
-                        >
-                          {day}: {hours}
-                        </p>
-                      ))}
+                      <p className="text-muted-foreground font-light text-sm">
+                        Mon - Fri: 9:00 AM - 8:00 PM
+                      </p>
+                      <p className="text-muted-foreground font-light text-sm">
+                        Sat - Sun: 10:00 AM - 6:00 PM
+                      </p>
                     </div>
                   </div>
 
@@ -153,23 +203,10 @@ export function BarbershopDetail() {
                     <div>
                       <p className="font-bold text-card-foreground mb-1">Phone</p>
                       <a
-                        href={`tel:${barbershop.phone}`}
+                        href={`tel:${barbershop.phone_number}`}
                         className="text-muted-foreground font-light text-sm hover:text-primary transition-colors"
                       >
-                        {barbershop.phone}
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-bold text-card-foreground mb-1">Email</p>
-                      <a
-                        href={`mailto:${barbershop.email}`}
-                        className="text-muted-foreground font-light text-sm hover:text-primary transition-colors"
-                      >
-                        {barbershop.email}
+                        {barbershop.phone_number}
                       </a>
                     </div>
                   </div>
@@ -201,11 +238,10 @@ export function BarbershopDetail() {
         <div className="flex gap-4 border-b border-border mb-8">
           <button
             onClick={() => setActiveTab("services")}
-            className={`px-6 py-3 font-bold transition-colors relative ${
-              activeTab === "services"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "services"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Services
             {activeTab === "services" && (
@@ -213,25 +249,23 @@ export function BarbershopDetail() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab("barbers")}
-            className={`px-6 py-3 font-bold transition-colors relative ${
-              activeTab === "barbers"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            onClick={() => setActiveTab("capsters")}
+            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "capsters"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Barbers
-            {activeTab === "barbers" && (
+            {activeTab === "capsters" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`px-6 py-3 font-bold transition-colors relative ${
-              activeTab === "reviews"
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "reviews"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
             Reviews
             {activeTab === "reviews" && (
@@ -253,59 +287,62 @@ export function BarbershopDetail() {
                 </h3>
                 <div className="flex items-center gap-3 mb-4">
                   <span className="font-bold text-2xl text-primary">
-                    {service.price}
+                    {formatPrice(service.price)}
                   </span>
                   <span className="text-muted-foreground font-light">
-                    {service.duration}
+                    {service.duration_minutes} min
                   </span>
                 </div>
                 <p className="text-muted-foreground font-light leading-relaxed mb-6">
                   {service.description}
                 </p>
                 <Link
-                  to={`/booking?barbershop_id=${barbershop.id}&service=${service.name}`}
+                  to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
                   className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
                 >
                   Book Now
                 </Link>
               </div>
             ))}
+            {services.length === 0 && (
+              <p className="text-muted-foreground">No services available.</p>
+            )}
           </div>
         )}
 
         {/* Barbers Tab */}
-        {activeTab === "barbers" && (
+        {activeTab === "capsters" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {barbers.map((barber) => (
+            {capsters.map((capster) => (
               <div
-                key={barber.id}
+                key={capster.id}
                 className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all"
               >
                 <div className="relative h-80 overflow-hidden bg-muted">
                   <ImageWithFallback
-                    src={barber.image}
-                    alt={barber.name}
+                    src={capster.image}
+                    alt={capster.name}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-4 right-4 bg-card px-3 py-1.5 rounded-lg flex items-center gap-1.5">
                     <Star className="w-4 h-4 fill-primary text-primary" />
                     <span className="font-bold text-card-foreground">
-                      {barber.rating}
+                      {capster.rating}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-6">
                   <h3 className="font-bold text-xl text-card-foreground mb-1">
-                    {barber.name}
+                    {capster.name}
                   </h3>
-                  <p className="text-primary font-normal mb-1">{barber.title}</p>
+                  <p className="text-primary font-normal mb-1">{capster.title}</p>
                   <p className="text-muted-foreground font-light text-sm mb-4">
-                    {barber.experience} experience
+                    {capster.experience} experience
                   </p>
 
                   <p className="text-muted-foreground font-light leading-relaxed mb-4">
-                    {barber.bio}
+                    {capster.bio}
                   </p>
 
                   <div className="mb-6">
@@ -313,26 +350,29 @@ export function BarbershopDetail() {
                       Specialties:
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {barber.specialties.map((specialty) => (
+                      {capster.specialties?.map((specialty) => (
                         <span
-                          key={specialty}
+                          key={specialty.trim()}
                           className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-normal"
                         >
-                          {specialty}
+                          {specialty.trim()}
                         </span>
                       ))}
                     </div>
                   </div>
 
                   <Link
-                    to={`/booking?barbershop_id=${barbershop.id}&barber=${barber.name}`}
+                    to={`/booking?barbershop_id=${barbershop.id}&barber_id=${capster.id}`}
                     className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
                   >
-                    Book with {barber.name.split(" ")[0]}
+                    Book with {capster.name.split(" ")[0]}
                   </Link>
                 </div>
               </div>
             ))}
+            {capsters.length === 0 && (
+              <p className="text-muted-foreground">No barbers available.</p>
+            )}
           </div>
         )}
 
@@ -357,11 +397,10 @@ export function BarbershopDetail() {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < review.rating
-                            ? "fill-primary text-primary"
-                            : "text-muted-foreground"
-                        }`}
+                        className={`w-4 h-4 ${i < review.rating
+                          ? "fill-primary text-primary"
+                          : "text-muted-foreground"
+                          }`}
                       />
                     ))}
                   </div>

@@ -27,3 +27,7 @@ export const adminDeleteCapster = async (id: string) => {
   await getCsrf();
   return await api.delete(`/api/partner/barbershop/capsters/${id}`);
 };
+
+export const getCapstersByBarbershopId = async (id: string) => {
+  return await api.get(`/api/barbershop/${id}/capsters`);
+};

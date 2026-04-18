@@ -1,67 +1,91 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { Calendar, Clock, User, Scissors, CheckCircle, ChevronRight, MapPin } from "lucide-react";
+import { Calendar, Clock, User, Scissors, CheckCircle, ChevronRight, MapPin, Loader2 } from "lucide-react";
 import { Calendar as CalendarComponent } from "../components/ui/calendar";
-import {
-  getBarbershopById,
-  getServicesByBarbershopId,
-  getBarbersByBarbershopId,
-} from "../data/marketplace-data";
+import { getBarbershopById } from "../../services/barbershop";
+import { getServicesByBarbershopId } from "../../services/service";
+import { getCapstersByBarbershopId } from "../../services/capster";
+import type { Barbershop } from "../../types/barbershop";
+import type { Service } from "../../types/services";
+import type { Capster } from "../../types/capster";
 
 export function Booking() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  const barbershopId = parseInt(searchParams.get("barbershop_id") || "0");
-  const preSelectedService = searchParams.get("service") || "";
-  const preSelectedBarber = searchParams.get("barber") || "";
+
+  const barbershopId = searchParams.get("barbershop_id") || "";
+  const preSelectedServiceId = searchParams.get("service_id") || "";
+  const preSelectedBarberId = searchParams.get("barber_id") || "";
 
   const [step, setStep] = useState(1);
-  const [selectedService, setSelectedService] = useState(preSelectedService);
-  const [selectedBarber, setSelectedBarber] = useState(preSelectedBarber);
+  const [selectedServiceId, setSelectedServiceId] = useState(preSelectedServiceId);
+  const [selectedBarberId, setSelectedBarberId] = useState(preSelectedBarberId);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
-  const barbershop = getBarbershopById(barbershopId);
-  const services = getServicesByBarbershopId(barbershopId);
-  const barbers = getBarbersByBarbershopId(barbershopId);
+  const [barbershop, setBarbershop] = useState<Barbershop | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [barbers, setBarbers] = useState<Capster[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Redirect if no barbershop ID
   useEffect(() => {
-    if (!barbershopId || !barbershop) {
-      navigate("/");
-    }
-  }, [barbershopId, barbershop, navigate]);
+    const fetchData = async () => {
+      if (!barbershopId) {
+        navigate("/");
+        return;
+      }
+      setLoading(true);
+      try {
+        const shopRes = await getBarbershopById(barbershopId);
+        const shopData: Barbershop = shopRes.data.data || shopRes.data;
+        setBarbershop(shopData);
+
+        if (shopData.services) {
+          setServices(shopData.services);
+        } else {
+          const servicesRes = await getServicesByBarbershopId(barbershopId);
+          const sData = servicesRes.data.data || servicesRes.data;
+          setServices(Array.isArray(sData) ? sData : []);
+        }
+
+        if (shopData.capsters) {
+          setBarbers(shopData.capsters);
+        } else {
+          const barbersRes = await getCapstersByBarbershopId(barbershopId);
+          const bData = barbersRes.data.data || barbersRes.data;
+          setBarbers(Array.isArray(bData) ? bData : []);
+        }
+      } catch (err) {
+        console.error("Error fetching booking data:", err);
+        navigate("/");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [barbershopId, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!barbershop) {
     return null;
   }
 
   const timeSlots = [
-    "9:00 AM",
-    "9:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "12:00 PM",
-    "12:30 PM",
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "4:30 PM",
-    "5:00 PM",
-    "5:30 PM",
-    "6:00 PM",
-    "6:30 PM",
-    "7:00 PM",
+    "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+    "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
+    "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM",
+    "6:00 PM", "6:30 PM", "7:00 PM",
   ];
 
   const handleBooking = () => {
@@ -72,9 +96,9 @@ export function Booking() {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return selectedService !== "";
+        return selectedServiceId !== "";
       case 2:
-        return selectedBarber !== "";
+        return selectedBarberId !== "";
       case 3:
         return selectedDate !== undefined && selectedTime !== "";
       case 4:
@@ -91,7 +115,19 @@ export function Booking() {
     { number: 4, label: "Details", icon: CheckCircle },
   ];
 
-  const selectedServiceData = services.find((s) => s.name === selectedService);
+  const selectedService = services.find((s) => s.id === selectedServiceId);
+  const selectedBarber = selectedBarberId === "No Preference"
+    ? { name: "No Preference" }
+    : barbers.find((b) => b.id === selectedBarberId);
+
+  // Helper to format currency
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
 
   return (
     <div className="min-h-screen py-16">
@@ -103,7 +139,7 @@ export function Booking() {
           </h1>
           <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span className="font-light">{barbershop.location}</span>
+            <span className="font-light">{barbershop.address}</span>
           </div>
         </div>
 
@@ -116,18 +152,16 @@ export function Booking() {
                 <div key={s.number} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${
-                        step >= s.number
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${step >= s.number
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
-                      }`}
+                        }`}
                     >
                       <Icon className="w-5 h-5" />
                     </div>
                     <span
-                      className={`text-sm font-light hidden md:block ${
-                        step >= s.number ? "text-foreground" : "text-muted-foreground"
-                      }`}
+                      className={`text-sm font-light hidden md:block ${step >= s.number ? "text-foreground" : "text-muted-foreground"
+                        }`}
                     >
                       {s.label}
                     </span>
@@ -156,25 +190,27 @@ export function Booking() {
                 {services.map((service) => (
                   <button
                     key={service.id}
-                    onClick={() => setSelectedService(service.name)}
-                    className={`p-6 rounded-xl border-2 text-left transition-all ${
-                      selectedService === service.name
+                    onClick={() => setSelectedServiceId(service.id)}
+                    className={`p-6 rounded-xl border-2 text-left transition-all ${selectedServiceId === service.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
-                    }`}
+                      }`}
                   >
                     <h3 className="font-bold text-lg text-card-foreground mb-2">
                       {service.name}
                     </h3>
                     <div className="flex items-center gap-3 text-muted-foreground mb-2">
-                      <span className="font-bold text-primary">{service.price}</span>
-                      <span className="font-light">{service.duration}</span>
+                      <span className="font-bold text-primary">{formatPrice(service.price)}</span>
+                      <span className="font-light">{service.duration_minutes} min</span>
                     </div>
                     <p className="text-muted-foreground font-light text-sm leading-relaxed">
                       {service.description}
                     </p>
                   </button>
                 ))}
+                {services.length === 0 && (
+                  <p className="text-muted-foreground col-span-2 text-center py-10">No services available.</p>
+                )}
               </div>
             </div>
           )}
@@ -191,12 +227,11 @@ export function Booking() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => setSelectedBarber("No Preference")}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
-                    selectedBarber === "No Preference"
+                  onClick={() => setSelectedBarberId("No Preference")}
+                  className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === "No Preference"
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
-                  }`}
+                    }`}
                 >
                   <h3 className="font-bold text-lg text-card-foreground mb-1">
                     No Preference
@@ -209,12 +244,11 @@ export function Booking() {
                 {barbers.map((barber) => (
                   <button
                     key={barber.id}
-                    onClick={() => setSelectedBarber(barber.name)}
-                    className={`p-6 rounded-xl border-2 text-left transition-all ${
-                      selectedBarber === barber.name
+                    onClick={() => setSelectedBarberId(barber.id)}
+                    className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === barber.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
-                    }`}
+                      }`}
                   >
                     <h3 className="font-bold text-lg text-card-foreground mb-1">
                       {barber.name}
@@ -223,12 +257,12 @@ export function Booking() {
                       {barber.title}
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {barber.specialties.slice(0, 2).map((specialty) => (
+                      {barber.specialties.split(",").slice(0, 2).map((specialty) => (
                         <span
-                          key={specialty}
+                          key={specialty.trim()}
                           className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
                         >
-                          {specialty}
+                          {specialty.trim()}
                         </span>
                       ))}
                     </div>
@@ -278,13 +312,12 @@ export function Booking() {
                         key={time}
                         onClick={() => setSelectedTime(time)}
                         disabled={!selectedDate}
-                        className={`p-3 rounded-lg border text-sm transition-all ${
-                          selectedTime === time
+                        className={`p-3 rounded-lg border text-sm transition-all ${selectedTime === time
                             ? "border-primary bg-primary text-primary-foreground font-bold"
                             : !selectedDate
-                            ? "border-border text-muted-foreground cursor-not-allowed opacity-50"
-                            : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"
-                        }`}
+                              ? "border-border text-muted-foreground cursor-not-allowed opacity-50"
+                              : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"
+                          }`}
                       >
                         {time}
                       </button>
@@ -363,18 +396,18 @@ export function Booking() {
                           {barbershop.name}
                         </span>
                         <span className="text-muted-foreground text-sm font-light">
-                          {barbershop.location}
+                          {barbershop.address}
                         </span>
                       </div>
                     </div>
                     <div className="h-px bg-border" />
                     <div className="flex justify-between">
                       <span className="text-muted-foreground font-light">Service:</span>
-                      <span className="text-foreground font-normal">{selectedService}</span>
+                      <span className="text-foreground font-normal">{selectedService?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground font-light">Barber:</span>
-                      <span className="text-foreground font-normal">{selectedBarber}</span>
+                      <span className="text-foreground font-normal">{selectedBarber?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground font-light">Date:</span>
@@ -386,13 +419,13 @@ export function Booking() {
                       <span className="text-muted-foreground font-light">Time:</span>
                       <span className="text-foreground font-normal">{selectedTime}</span>
                     </div>
-                    {selectedServiceData && (
+                    {selectedService && (
                       <>
                         <div className="h-px bg-border" />
                         <div className="flex justify-between items-center">
                           <span className="text-foreground font-bold">Total:</span>
                           <span className="text-primary font-bold text-xl">
-                            {selectedServiceData.price}
+                            {formatPrice(selectedService.price)}
                           </span>
                         </div>
                       </>
@@ -413,7 +446,7 @@ export function Booking() {
                 Back
               </button>
             )}
-            
+
             <button
               onClick={() => {
                 if (step < 4) {
@@ -423,11 +456,10 @@ export function Booking() {
                 }
               }}
               disabled={!canProceed()}
-              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto ${
-                canProceed()
+              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto ${canProceed()
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}
+                }`}
             >
               {step === 4 ? "Confirm Booking" : "Continue"}
             </button>

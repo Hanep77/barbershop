@@ -1,3 +1,6 @@
+import { Capster } from "./capster";
+import { Service } from "./services";
+
 export interface Barbershop {
   id: string;
   user_id: string;
@@ -12,6 +15,8 @@ export interface Barbershop {
   coverImage: string;
   created_at: Date;
   updated_at: Date;
+  capsters?: Capster[];
+  services?: Service[];
 }
 
 export type CreateBarbershopInput = Omit<

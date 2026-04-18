@@ -52,7 +52,7 @@ class BarbershopController extends Controller
 
     public function show(Barbershop $barbershop)
     {
-        return response()->json($barbershop->load("services"));
+        return response()->json($barbershop->load(["services", "capsters"]));
     }
 
     public function update(Request $request, Barbershop $barbershop)

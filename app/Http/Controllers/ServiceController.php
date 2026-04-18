@@ -9,9 +9,17 @@ use Illuminate\Support\Facades\Gate;
 
 class ServiceController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, Barbershop $barbershop = null)
     {
-        $barbershop = $request->user()->barbershop;
+        if (!$barbershop) {
+            $barbershop = $request->user()->barbershop;
+        }
+
+        if (!$barbershop) {
+            return response()->json([
+                "message" => "Barbershop not found",
+            ], 404);
+        }
 
         $services = $barbershop->services()->with("category")->get();
 

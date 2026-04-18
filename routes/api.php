@@ -16,13 +16,14 @@ Route::get('/user', function (Request $request) {
 Route::post("/register", [UserController::class, "register"]);
 Route::post("/login", [UserController::class, "login"]);
 
+Route::get("/barbershop", [BarbershopController::class, "index"]);
+Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
+
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
 
     // Route::resouece("/barbershop", BarbershopController::class);
-    Route::get("/barbershop", [BarbershopController::class, "index"]);
     Route::post("/barbershop", [BarbershopController::class, "store"]);
-    Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
     Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
     Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);
 
@@ -38,6 +39,7 @@ Route::middleware("auth:sanctum")->group(function () {
     });
 
     Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
+    Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);
     Route::delete("/barbershop/services/{service}", [ServiceController::class, "destroy"]);
 });
