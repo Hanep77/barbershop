@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transactions', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+        Schema::create('bookings', function (Blueprint $table) {
+            $table->id();
             $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('barbershop_id')->constrained()->onDelete('cascade');
-            $table->dateTime('booking_date');
-            $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
-            $table->decimal('total_price', 8, 2);
+            $table->foreignUuid('service_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('capster_id')->constrained()->onDelete('cascade');
+            $table->date('booking_date');
+            $table->time('booking_time');
+            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transactions');
+        Schema::dropIfExists('bookings');
     }
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Calendar, Clock, User, Scissors, CheckCircle, ChevronRight, MapPin, Loader2 } from "lucide-react";
 import { Calendar as CalendarComponent } from "../components/ui/calendar";
+import api from "../../lib/axios";
 import { getBarbershopById } from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
@@ -30,6 +31,30 @@ export function Booking() {
   const [services, setServices] = useState<Service[]>([]);
   const [barbers, setBarbers] = useState<Capster[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (!selectedDate || !selectedServiceId || !selectedBarberId || selectedBarberId === "No Preference") {
+        setAvailableSlots([]);
+        return;
+      }
+      setLoadingSlots(true);
+      try {
+        const formattedDate = selectedDate.toISOString().split('T')[0];
+        const res = await api.get(`/api/barbershop/${barbershopId}/available-slots`, {
+          params: { date: formattedDate, service_id: selectedServiceId, capster_id: selectedBarberId }
+        });
+        setAvailableSlots(res.data.slots);
+      } catch (err) {
+        console.error("Error fetching slots:", err);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+    fetchSlots();
+  }, [selectedDate, selectedServiceId, selectedBarberId, barbershopId]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,13 +105,6 @@ export function Booking() {
   if (!barbershop) {
     return null;
   }
-
-  const timeSlots = [
-    "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-    "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM",
-    "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM",
-    "6:00 PM", "6:30 PM", "7:00 PM",
-  ];
 
   const handleBooking = () => {
     // In a real app, this would submit to a backend
@@ -153,8 +171,8 @@ export function Booking() {
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${step >= s.number
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                         }`}
                     >
                       <Icon className="w-5 h-5" />
@@ -192,8 +210,8 @@ export function Booking() {
                     key={service.id}
                     onClick={() => setSelectedServiceId(service.id)}
                     className={`p-6 rounded-xl border-2 text-left transition-all ${selectedServiceId === service.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
                       }`}
                   >
                     <h3 className="font-bold text-lg text-card-foreground mb-2">
@@ -229,8 +247,8 @@ export function Booking() {
                 <button
                   onClick={() => setSelectedBarberId("No Preference")}
                   className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === "No Preference"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
                     }`}
                 >
                   <h3 className="font-bold text-lg text-card-foreground mb-1">
@@ -246,8 +264,8 @@ export function Booking() {
                     key={barber.id}
                     onClick={() => setSelectedBarberId(barber.id)}
                     className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === barber.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
                       }`}
                   >
                     <h3 className="font-bold text-lg text-card-foreground mb-1">
@@ -296,9 +314,11 @@ export function Booking() {
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) =>
-                        date < new Date() || date < new Date("1900-01-01")
-                      }
+                      disabled={(date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
+                      }}
                       className="rounded-xl border border-border"
                     />
                   </div>
@@ -309,27 +329,31 @@ export function Booking() {
                   <h3 className="font-bold text-card-foreground mb-4">
                     Select Time
                   </h3>
-                  <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-2">
-                    {timeSlots.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        disabled={!selectedDate}
-                        className={`p-3 rounded-lg border text-sm transition-all ${selectedTime === time
-                            ? "border-primary bg-primary text-primary-foreground font-bold"
-                            : !selectedDate
-                              ? "border-border text-muted-foreground cursor-not-allowed opacity-50"
+                  {loadingSlots ? (
+                    <div className="flex items-center justify-center py-10">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-2">
+                      {availableSlots.length > 0 ? (
+                        availableSlots.map((time) => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={`p-3 rounded-lg border text-sm transition-all ${selectedTime === time
+                              ? "border-primary bg-primary text-primary-foreground font-bold"
                               : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"
-                          }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                  {!selectedDate && (
-                    <p className="text-muted-foreground text-sm font-light mt-4">
-                      Please select a date first
-                    </p>
+                              }`}
+                          >
+                            {time}
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-sm col-span-3 text-center py-4">
+                          {selectedDate ? "No slots available." : "Please select a date first"}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -460,8 +484,8 @@ export function Booking() {
               }}
               disabled={!canProceed()}
               className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto ${canProceed()
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
             >
               {step === 4 ? "Confirm Booking" : "Continue"}

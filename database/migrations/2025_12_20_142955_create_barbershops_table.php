@@ -22,6 +22,8 @@ return new class extends Migration
             $table->boolean("is_active")->default(true);
             $table->string("latitude");
             $table->string("longitude");
+            $table->time("open_time")->default("09:00");
+            $table->time("close_time")->default("21:00");
             $table->timestamps();
         });
     }
