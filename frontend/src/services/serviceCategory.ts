@@ -10,6 +10,10 @@ export const adminGetServiceCategories = async () => {
   return await api.get(`/api/partner/barbershop/service-categories`);
 };
 
+export const getServiceCategoriesByBarbershop = async (barbershopId: string) => {
+  return await api.get(`/api/barbershop/${barbershopId}/service-categories`);
+};
+
 export const adminCreateServiceCategory = async (
   data: CreateServiceCategoryRequest,
 ) => {

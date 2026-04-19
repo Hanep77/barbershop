@@ -5,9 +5,11 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getBarbershopById } from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
+import { getServiceCategoriesByBarbershop } from "../../services/serviceCategory";
 import type { Barbershop } from "../../types/barbershop";
 import type { Service } from "../../types/services";
 import type { Capster } from "../../types/capster";
+import type { ServiceCategory } from "../../types/serviceCategory";
 
 export function BarbershopDetail() {
   const { id } = useParams();
@@ -15,6 +17,7 @@ export function BarbershopDetail() {
   const [activeTab, setActiveTab] = useState<"services" | "capsters" | "reviews">("services");
   const [barbershop, setBarbershop] = useState<Barbershop | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [capsters, setCapsters] = useState<Capster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,27 +27,25 @@ export function BarbershopDetail() {
       if (!id) return;
       setLoading(true);
       try {
-        const shopRes = await getBarbershopById(id);
-        const shopData: Barbershop = shopRes.data.data || shopRes.data;
+        const [shopRes, servicesRes, capstersRes, categoriesRes] = await Promise.all([
+          getBarbershopById(id),
+          getServicesByBarbershopId(id),
+          getCapstersByBarbershopId(id),
+          getServiceCategoriesByBarbershop(id)
+        ]);
 
+        const shopData: Barbershop = shopRes.data.data || shopRes.data;
         setBarbershop(shopData);
 
-        // Use relations if backend already provided them, otherwise fetch separately
-        if (shopData.services) {
-          setServices(shopData.services);
-        } else {
-          const servicesRes = await getServicesByBarbershopId(id);
-          const sData = servicesRes.data.data || servicesRes.data;
-          setServices(Array.isArray(sData) ? sData : []);
-        }
+        const sData = servicesRes.data.data || servicesRes.data;
+        setServices(Array.isArray(sData) ? sData : []);
 
-        if (shopData.capsters) {
-          setCapsters(shopData.capsters);
-        } else {
-          const capstersRes = await getCapstersByBarbershopId(id);
-          const cData = capstersRes.data.data || capstersRes.data.capsters || capstersRes.data;
-          setCapsters(Array.isArray(cData) ? cData : []);
-        }
+        const cData = capstersRes.data.data || capstersRes.data.capsters || capstersRes.data;
+        setCapsters(Array.isArray(cData) ? cData : []);
+
+        const catData = categoriesRes.data.categories || categoriesRes.data;
+        setCategories(Array.isArray(catData) ? catData : []);
+
       } catch (err) {
         console.error("Error fetching barbershop details:", err);
         setError("Failed to load barbershop details.");
@@ -276,35 +277,86 @@ export function BarbershopDetail() {
 
         {/* Services Tab */}
         {activeTab === "services" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
-              <div
-                key={service.id}
-                className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all"
-              >
-                <h3 className="font-bold text-xl text-card-foreground mb-2">
-                  {service.name}
-                </h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-bold text-2xl text-primary">
-                    {formatPrice(service.price)}
-                  </span>
-                  <span className="text-muted-foreground font-light">
-                    {service.duration_minutes} min
-                  </span>
+          <div className="space-y-12">
+            {categories.map((category) => (
+              <div key={category.id}>
+                <h2 className="text-2xl font-bold mb-6 text-card-foreground border-l-4 border-primary pl-4">
+                  {category.name}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {category.services && category.services.map((service) => (
+                    <div
+                      key={service.id}
+                      className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col"
+                    >
+                      <h3 className="font-bold text-xl text-card-foreground mb-2">
+                        {service.name}
+                      </h3>
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="font-bold text-2xl text-primary">
+                          {formatPrice(service.price)}
+                        </span>
+                        <span className="text-muted-foreground font-light text-sm">
+                          {service.duration_minutes} min
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
+                        {service.description}
+                      </p>
+                      <Link
+                        to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
+                        className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                      >
+                        Book Now
+                      </Link>
+                    </div>
+                  ))}
+                  {(!category.services || category.services.length === 0) && (
+                    <p className="text-muted-foreground italic">No services in this category.</p>
+                  )}
                 </div>
-                <p className="text-muted-foreground font-light leading-relaxed mb-6">
-                  {service.description}
-                </p>
-                <Link
-                  to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
-                  className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
-                >
-                  Book Now
-                </Link>
               </div>
             ))}
-            {services.length === 0 && (
+
+            {/* Services with no category (if any) */}
+            {services.filter(s => !s.category_id).length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-6 text-card-foreground border-l-4 border-primary pl-4">
+                  Other Services
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {services.filter(s => !s.category_id).map((service) => (
+                    <div
+                      key={service.id}
+                      className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col"
+                    >
+                      <h3 className="font-bold text-xl text-card-foreground mb-2">
+                        {service.name}
+                      </h3>
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="font-bold text-2xl text-primary">
+                          {formatPrice(service.price)}
+                        </span>
+                        <span className="text-muted-foreground font-light text-sm">
+                          {service.duration_minutes} min
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
+                        {service.description}
+                      </p>
+                      <Link
+                        to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
+                        className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                      >
+                        Book Now
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {categories.length === 0 && services.length === 0 && (
               <p className="text-muted-foreground">No services available.</p>
             )}
           </div>

@@ -257,7 +257,10 @@ export function Booking() {
                       {barber.title}
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {barber.specialties.split(",").slice(0, 2).map((specialty) => (
+                      {(Array.isArray(barber.specialties)
+                        ? barber.specialties
+                        : (barber.specialties || "").split(",")
+                      ).slice(0, 2).map((specialty) => (
                         <span
                           key={specialty.trim()}
                           className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"

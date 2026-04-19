@@ -18,6 +18,9 @@ Route::post("/login", [UserController::class, "login"]);
 
 Route::get("/barbershop", [BarbershopController::class, "index"]);
 Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
+Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
+Route::get("/barbershop/{barbershop}/service-categories", [ServiceCategoryController::class, "index"]);
+Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
@@ -38,8 +41,6 @@ Route::middleware("auth:sanctum")->group(function () {
         });
     });
 
-    Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
-    Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);
     Route::delete("/barbershop/services/{service}", [ServiceController::class, "destroy"]);
 });
