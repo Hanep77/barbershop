@@ -6,6 +6,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
+use App\Http\Controllers\BookingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,7 @@ Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
 Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
 Route::get("/barbershop/{barbershop}/service-categories", [ServiceCategoryController::class, "index"]);
 Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
+Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class, "getAvailableSlots"]);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);

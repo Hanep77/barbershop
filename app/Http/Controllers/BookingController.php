@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Booking;
+use App\Models\Barbershop;
+use App\Models\Service;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class BookingController extends Controller
+{
+    public function getAvailableSlots(Request $request, Barbershop $barbershop)
+    {
+        $date = $request->query('date');
+        $capsterId = $request->query('capster_id');
+        $serviceId = $request->query('service_id');
+
+        if (!$date || !$capsterId || !$serviceId) {
+            return response()->json(['message' => 'Missing parameters'], 400);
+        }
+
+        $duration = Service::findOrFail($serviceId)->duration_minutes;
+        $start = Carbon::parse($barbershop->open_time);
+        $end = Carbon::parse($barbershop->close_time);
+
+        $bookedSlots = Booking::where('capster_id', $capsterId)
+            ->where('booking_date', $date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->get();
+
+        $availableSlots = [];
+        $current = Carbon::parse($barbershop->open_time);
+        $closingTime = Carbon::parse($barbershop->close_time);
+
+        while ($current->copy()->addMinutes($duration)->lessThanOrEqualTo($closingTime)) {
+            $slotStart = $current->copy();
+            $slotEnd = $current->copy()->addMinutes($duration);
+
+            $isBooked = $bookedSlots->contains(function ($booking) use ($slotStart, $slotEnd) {
+                $bookingStart = Carbon::parse($booking->booking_time);
+                $bookingEnd = $bookingStart->copy()->addMinutes($booking->service->duration_minutes);
+                
+                return ($slotStart->between($bookingStart, $bookingEnd) || 
+                        $slotEnd->between($bookingStart, $bookingEnd) ||
+                        $bookingStart->between($slotStart, $slotEnd));
+            });
+
+            if (!$isBooked) {
+                $availableSlots[] = $slotStart->format('H:i');
+            }
+            $current->addMinutes(30); // Interval 30 menit
+        }
+
+        return response()->json(['slots' => $availableSlots]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'barbershop_id' => 'required|exists:barbershops,id',
+            'service_id' => 'required|exists:services,id',
+            'capster_id' => 'required|exists:capsters,id',
+            'booking_date' => 'required|date',
+            'booking_time' => 'required',
+        ]);
+
+        $booking = Booking::create(array_merge($validated, [
+            'user_id' => $request->user()->id,
+            'status' => 'pending'
+        ]));
+
+        return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
+    }
+}

@@ -16,6 +16,11 @@ class Barbershop extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'open_time' => 'datetime:H:i',
+        'close_time' => 'datetime:H:i',
+    ];
+
     protected $appends = ["coverImage"];
 
     public function getCoverImageAttribute()

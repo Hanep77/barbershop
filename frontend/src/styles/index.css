@@ -1,3 +1,38 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* Paksa semua teks di dalam kalender menjadi hitam */
+.rdp-day, 
+.rdp-button, 
+.rdp-caption,
+.rdp-nav_button,
+[class*="rdp-day"],
+[class*="rdp-caption"] {
+  color: #000000 !important;
+}
+
+/* Khusus hari yang dipilih: teks putih, background gelap agar kontras */
+.rdp-day_selected,
+.rdp-day_selected:hover {
+  color: #ffffff !important;
+  background-color: #000000 !important;
+}
+
+/* Hari ini: beri sedikit penanda */
+.rdp-day_today {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+/* Hari yang di-disable: warna abu-abu */
+.rdp-day[disabled] {
+  color: #cccccc !important;
+  cursor: not-allowed;
+}
+
+/* Tombol navigasi bulan */
+.rdp-nav_button {
+  background-color: #f3f3f3 !important;
+  border: 1px solid #ddd;
+}
