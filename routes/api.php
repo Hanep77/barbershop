@@ -7,6 +7,7 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\RatingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,14 +24,16 @@ Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "inde
 Route::get("/barbershop/{barbershop}/service-categories", [ServiceCategoryController::class, "index"]);
 Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
 Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class, "getAvailableSlots"]);
+Route::get("/barbershop/{barbershop}/ratings", [RatingController::class, "index"]);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
 
     Route::get("/bookings", [BookingController::class, "index"]);
     Route::post("/bookings", [BookingController::class, "store"]);
+    Route::post("/ratings", [RatingController::class, "store"]);
     
-    // Route::resouece("/barbershop", BarbershopController::class);
+    // Barbershop management
     Route::post("/barbershop", [BarbershopController::class, "store"]);
     Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
     Route::delete("/barbershop/{barbershop}", [BarbershopController::class, "destroy"]);

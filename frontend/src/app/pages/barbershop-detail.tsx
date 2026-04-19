@@ -6,10 +6,12 @@ import { getBarbershopById } from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
 import { getServiceCategoriesByBarbershop } from "../../services/serviceCategory";
+import { getBarbershopRatings } from "../../services/rating";
 import type { Barbershop } from "../../types/barbershop";
 import type { Service } from "../../types/services";
 import type { Capster } from "../../types/capster";
 import type { ServiceCategory } from "../../types/serviceCategory";
+import type { Rating } from "../../types/rating";
 
 export function BarbershopDetail() {
   const { id } = useParams();
@@ -19,6 +21,7 @@ export function BarbershopDetail() {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [capsters, setCapsters] = useState<Capster[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,11 +30,12 @@ export function BarbershopDetail() {
       if (!id) return;
       setLoading(true);
       try {
-        const [shopRes, servicesRes, capstersRes, categoriesRes] = await Promise.all([
+        const [shopRes, servicesRes, capstersRes, categoriesRes, ratingsRes] = await Promise.all([
           getBarbershopById(id),
           getServicesByBarbershopId(id),
           getCapstersByBarbershopId(id),
-          getServiceCategoriesByBarbershop(id)
+          getServiceCategoriesByBarbershop(id),
+          getBarbershopRatings(id)
         ]);
 
         const shopData: Barbershop = shopRes.data.data || shopRes.data;
@@ -46,6 +50,9 @@ export function BarbershopDetail() {
         const catData = categoriesRes.data.categories || categoriesRes.data;
         setCategories(Array.isArray(catData) ? catData : []);
 
+        const rData = ratingsRes.data.data || ratingsRes.data;
+        setRatings(Array.isArray(rData) ? rData : []);
+
       } catch (err) {
         console.error("Error fetching barbershop details:", err);
         setError("Failed to load barbershop details.");
@@ -56,6 +63,7 @@ export function BarbershopDetail() {
 
     fetchData();
   }, [id]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -65,7 +73,6 @@ export function BarbershopDetail() {
   }
 
   if (error || !barbershop) {
-    console.log(error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -83,29 +90,9 @@ export function BarbershopDetail() {
     );
   }
 
-  const mockReviews = [
-    {
-      id: 1,
-      customerName: "John Doe",
-      rating: 5,
-      date: "March 15, 2026",
-      comment: "Excellent service! Marcus gave me the best haircut I've had in years. Will definitely be coming back.",
-    },
-    {
-      id: 2,
-      customerName: "Michael Smith",
-      rating: 5,
-      date: "March 10, 2026",
-      comment: "Professional atmosphere and skilled barbers. The attention to detail is impressive.",
-    },
-    {
-      id: 3,
-      customerName: "David Johnson",
-      rating: 4,
-      date: "March 5, 2026",
-      comment: "Great experience overall. Booking was easy and the cut was exactly what I wanted.",
-    },
-  ];
+  const averageRating = ratings.length > 0 
+    ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
+    : "New";
 
   // Helper to format currency
   const formatPrice = (price: number) => {
@@ -157,10 +144,10 @@ export function BarbershopDetail() {
                       <div className="flex items-center gap-2">
                         <Star className="w-5 h-5 fill-primary text-primary" />
                         <span className="font-bold text-xl text-card-foreground">
-                          {4.9} {/* Default rating since not in backend yet */}
+                          {averageRating}
                         </span>
                         <span className="text-muted-foreground font-light">
-                          ({120} reviews)
+                          ({ratings.length} reviews)
                         </span>
                       </div>
                       <span className="text-primary font-bold text-lg">
@@ -311,54 +298,9 @@ export function BarbershopDetail() {
                       </Link>
                     </div>
                   ))}
-                  {(!category.services || category.services.length === 0) && (
-                    <p className="text-muted-foreground italic">No services in this category.</p>
-                  )}
                 </div>
               </div>
             ))}
-
-            {/* Services with no category (if any) */}
-            {services.filter(s => !s.category_id).length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6 text-card-foreground border-l-4 border-primary pl-4">
-                  Other Services
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {services.filter(s => !s.category_id).map((service) => (
-                    <div
-                      key={service.id}
-                      className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col"
-                    >
-                      <h3 className="font-bold text-xl text-card-foreground mb-2">
-                        {service.name}
-                      </h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="font-bold text-2xl text-primary">
-                          {formatPrice(service.price)}
-                        </span>
-                        <span className="text-muted-foreground font-light text-sm">
-                          {service.duration_minutes} min
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
-                        {service.description}
-                      </p>
-                      <Link
-                        to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
-                        className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
-                      >
-                        Book Now
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {categories.length === 0 && services.length === 0 && (
-              <p className="text-muted-foreground">No services available.</p>
-            )}
           </div>
         )}
 
@@ -376,12 +318,6 @@ export function BarbershopDetail() {
                     alt={capster.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-4 right-4 bg-card px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                    <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span className="font-bold text-card-foreground">
-                      {capster.rating}
-                    </span>
-                  </div>
                 </div>
 
                 <div className="p-6">
@@ -389,30 +325,9 @@ export function BarbershopDetail() {
                     {capster.name}
                   </h3>
                   <p className="text-primary font-normal mb-1">{capster.title}</p>
-                  <p className="text-muted-foreground font-light text-sm mb-4">
-                    {capster.experience} experience
-                  </p>
-
                   <p className="text-muted-foreground font-light leading-relaxed mb-4">
                     {capster.bio}
                   </p>
-
-                  <div className="mb-6">
-                    <p className="text-card-foreground font-bold text-sm mb-2">
-                      Specialties:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {capster.specialties?.map((specialty) => (
-                        <span
-                          key={specialty.trim()}
-                          className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-normal"
-                        >
-                          {specialty.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
                   <Link
                     to={`/booking?barbershop_id=${barbershop.id}&barber_id=${capster.id}`}
                     className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
@@ -422,28 +337,34 @@ export function BarbershopDetail() {
                 </div>
               </div>
             ))}
-            {capsters.length === 0 && (
-              <p className="text-muted-foreground">No barbers available.</p>
-            )}
           </div>
         )}
 
         {/* Reviews Tab */}
         {activeTab === "reviews" && (
           <div className="max-w-4xl space-y-6">
-            {mockReviews.map((review) => (
+            {ratings.map((review) => (
               <div
                 key={review.id}
                 className="bg-card rounded-xl p-6 border border-border"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h4 className="font-bold text-card-foreground mb-1">
-                      {review.customerName}
-                    </h4>
-                    <p className="text-muted-foreground font-light text-sm">
-                      {review.date}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                      {review.user?.name ? review.user.name[0].toUpperCase() : "U"}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-card-foreground mb-1">
+                        {review.user?.name || "Anonymous User"}
+                      </h4>
+                      <p className="text-muted-foreground font-light text-sm">
+                        {new Date(review.created_at).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric"
+                        })}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
@@ -462,6 +383,12 @@ export function BarbershopDetail() {
                 </p>
               </div>
             ))}
+            {ratings.length === 0 && (
+              <div className="text-center py-12">
+                <Star className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+              </div>
+            )}
           </div>
         )}
       </section>

@@ -124,374 +124,142 @@ export function AdminBookings() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b border-border bg-muted">
         <div className="p-6">
           <h1 className="text-foreground mb-1 text-2xl font-bold">Bookings Management</h1>
-          <p className="text-sm text-muted-foreground">
-            Monitor and manage customer appointments
-          </p>
+          <p className="text-sm text-muted-foreground">Monitor and manage customer appointments</p>
         </div>
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  Total Bookings
-                </p>
-                <p className="text-2xl font-bold text-card-foreground">{stats.total}</p>
-              </div>
-              <Calendar className="w-8 h-8 text-primary" />
-            </div>
+            <p className="text-sm text-muted-foreground mb-1">Total Bookings</p>
+            <p className="text-2xl font-bold text-card-foreground">{stats.total}</p>
           </Card>
           <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Pending</p>
-                <p className="text-2xl font-bold text-amber-500">{stats.pending}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-amber-500" />
-            </div>
+            <p className="text-sm text-muted-foreground mb-1 text-amber-500">Pending</p>
+            <p className="text-2xl font-bold text-amber-500">{stats.pending}</p>
           </Card>
           <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Confirmed</p>
-                <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-500" />
-            </div>
+            <p className="text-sm text-muted-foreground mb-1 text-blue-500">Confirmed</p>
+            <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
           </Card>
           <Card className="p-6 bg-card border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                <p className="text-2xl font-bold text-green-500">{stats.completed}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
+            <p className="text-sm text-muted-foreground mb-1 text-green-500">Completed</p>
+            <p className="text-2xl font-bold text-green-500">{stats.completed}</p>
           </Card>
         </div>
 
-        {/* Filters */}
         <Card className="bg-card border-border">
-          <div className="p-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-card-foreground">Filters:</span>
-              </div>
-              <Select value={filterBarber} onValueChange={setFilterBarber}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="All Barbers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Barbers</SelectItem>
-                  {barbers.map((barber) => (
-                    <SelectItem key={barber} value={barber}>
-                      {barber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-              {(filterBarber !== "all" || filterStatus !== "all") && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setFilterBarber("all");
-                    setFilterStatus("all");
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+          <div className="p-4 flex gap-4 flex-wrap">
+            <div className="flex items-center gap-2"><Filter className="w-5 h-5 text-muted-foreground" /><span className="text-sm">Filters:</span></div>
+            <Select value={filterBarber} onValueChange={setFilterBarber}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All Barbers" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Barbers</SelectItem>
+                {barbers.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </Card>
 
-        {/* Bookings Tabs */}
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="upcoming">
-              Upcoming ({upcomingBookings.length})
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              Past / Finished ({completedBookings.length})
-            </TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
+            <TabsTrigger value="completed">Past ({completedBookings.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="mt-6">
-            <Card className="bg-card border-border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Service
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Barber
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {upcomingBookings.map((booking) => {
-                      const StatusIcon = getStatusIcon(booking.status);
-                      return (
-                        <tr
-                          key={booking.id}
-                          className="hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {booking.user?.name
-                                    ? booking.user.name.split(" ").map((n) => n[0]).join("")
-                                    : "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium text-card-foreground">
-                                  {booking.user?.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {booking.user?.email}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.service?.name}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.capster?.name}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-muted-foreground" />
-                              <div>
-                                <p className="text-sm text-card-foreground">
-                                  {new Date(booking.booking_date).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    }
-                                  )}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {booking.booking_time}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <Badge
-                              variant="outline"
-                              className={getStatusColor(booking.status)}
-                            >
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {booking.status}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-medium text-card-foreground">
-                              {booking.service ? formatPrice(booking.service.price) : "-"}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <Select
-                              value={booking.status}
-                              onValueChange={(value) =>
-                                handleStatusChange(
-                                  booking.id,
-                                  value as Booking['status']
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-[140px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">
-                                  Confirmed
-                                </SelectItem>
-                                <SelectItem value="completed">
-                                  Completed
-                                </SelectItem>
-                                <SelectItem value="cancelled">
-                                  Cancelled
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {upcomingBookings.length === 0 && (
-                  <div className="p-12 text-center">
-                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No upcoming bookings found
-                    </p>
-                  </div>
-                )}
-              </div>
+            <Card className="bg-card border-border overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                  <tr>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Service</th>
+                    <th className="px-6 py-4">Barber</th>
+                    <th className="px-6 py-4">Date/Time</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Price</th>
+                    <th className="px-6 py-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {upcomingBookings.map((b) => {
+                    const StatusIcon = getStatusIcon(b.status);
+                    return (
+                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-3">
+                              <Avatar className="w-8 h-8"><AvatarFallback className="text-xs">{b.user?.name?.[0]}</AvatarFallback></Avatar>
+                              <div><p className="font-medium">{b.user?.name}</p><p className="text-xs text-muted-foreground">{b.user?.email}</p></div>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4">{b.service?.name}</td>
+                        <td className="px-6 py-4">{b.capster?.name}</td>
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {b.booking_date}</div>
+                           <div className="flex items-center gap-1 text-muted-foreground text-xs"><Clock className="w-3 h-3" /> {b.booking_time}</div>
+                        </td>
+                        <td className="px-6 py-4"><Badge variant="outline" className={getStatusColor(b.status)}><StatusIcon className="w-3 h-3 mr-1" />{b.status}</Badge></td>
+                        <td className="px-6 py-4 font-medium">{b.service ? formatPrice(b.service.price) : "-"}</td>
+                        <td className="px-6 py-4">
+                          <Select value={b.status} onValueChange={(val) => handleStatusChange(b.id, val as Booking['status'])}>
+                            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {upcomingBookings.length === 0 && <div className="p-12 text-center text-muted-foreground">No upcoming bookings found</div>}
             </Card>
           </TabsContent>
 
           <TabsContent value="completed" className="mt-6">
-            <Card className="bg-card border-border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Service
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Barber
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs text-muted-foreground uppercase tracking-wider">
-                        Price
-                      </th>
+            <Card className="bg-card border-border overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted text-muted-foreground uppercase text-xs">
+                  <tr>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Service</th>
+                    <th className="px-6 py-4">Barber</th>
+                    <th className="px-6 py-4">Date/Time</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {completedBookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4 font-medium">{b.user?.name}</td>
+                      <td className="px-6 py-4">{b.service?.name}</td>
+                      <td className="px-6 py-4">{b.capster?.name}</td>
+                      <td className="px-6 py-4">{b.booking_date} {b.booking_time}</td>
+                      <td className="px-6 py-4"><Badge variant="outline" className={getStatusColor(b.status)}>{b.status}</Badge></td>
+                      <td className="px-6 py-4 font-medium">{b.service ? formatPrice(b.service.price) : "-"}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {completedBookings.map((booking) => {
-                      const StatusIcon = getStatusIcon(booking.status);
-                      return (
-                        <tr
-                          key={booking.id}
-                          className="hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {booking.user?.name
-                                    ? booking.user.name.split(" ").map((n) => n[0]).join("")
-                                    : "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm font-medium text-card-foreground">
-                                  {booking.user?.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {booking.user?.email}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.service?.name}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.capster?.name}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-muted-foreground" />
-                              <div>
-                                <p className="text-sm text-card-foreground">
-                                  {new Date(booking.booking_date).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    }
-                                  )}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {booking.booking_time}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <Badge
-                              variant="outline"
-                              className={getStatusColor(booking.status)}
-                            >
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {booking.status}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm font-medium text-card-foreground">
-                                {booking.service ? formatPrice(booking.service.price) : "-"}
-                            </p>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {completedBookings.length === 0 && (
-                  <div className="p-12 text-center">
-                    <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No completed or cancelled bookings found
-                    </p>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </tbody>
+              </table>
+              {completedBookings.length === 0 && <div className="p-12 text-center text-muted-foreground">No past bookings found</div>}
             </Card>
           </TabsContent>
         </Tabs>

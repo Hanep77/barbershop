@@ -116,11 +116,6 @@ export function Booking() {
       return;
     }
 
-    if (selectedBarberId === "No Preference") {
-        setError("Please select a specific barber for now.");
-        return;
-    }
-
     setSubmitting(true);
     setError(null);
 
@@ -169,7 +164,6 @@ export function Booking() {
     ? { name: "No Preference" }
     : barbers.find((b) => b.id === selectedBarberId);
 
-  // Helper to format currency
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -181,18 +175,14 @@ export function Booking() {
   return (
     <div className="min-h-screen py-16">
       <div className="container mx-auto px-6 max-w-6xl">
-        {/* Barbershop Header */}
         <div className="mb-8 text-center">
-          <h1 className="font-bold text-4xl text-foreground mb-2">
-            Book at {barbershop.name}
-          </h1>
+          <h1 className="font-bold text-4xl text-foreground mb-2">Book at {barbershop.name}</h1>
           <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <MapPin className="w-4 h-4" />
             <span className="font-light">{barbershop.address}</span>
           </div>
         </div>
 
-        {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-center gap-2 md:gap-4">
             {steps.map((s, index) => {
@@ -200,24 +190,12 @@ export function Booking() {
               return (
                 <div key={s.number} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${step >= s.number
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                        }`}
-                    >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${step >= s.number ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                       <Icon className="w-5 h-5" />
                     </div>
-                    <span
-                      className={`text-sm font-light hidden md:block ${step >= s.number ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                    >
-                      {s.label}
-                    </span>
+                    <span className={`text-sm font-light hidden md:block ${step >= s.number ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</span>
                   </div>
-                  {index < steps.length - 1 && (
-                    <ChevronRight className="w-5 h-5 text-muted-foreground mx-2 md:mx-4" />
-                  )}
+                  {index < steps.length - 1 && <ChevronRight className="w-5 h-5 text-muted-foreground mx-2 md:mx-4" />}
                 </div>
               );
             })}
@@ -225,165 +203,52 @@ export function Booking() {
         </div>
 
         <div className="bg-card rounded-xl p-8 md:p-12 border border-border">
-          {/* Step 1: Select Service */}
           {step === 1 && (
             <div>
-              <h2 className="font-bold text-3xl text-card-foreground mb-3">
-                Choose Your Service
-              </h2>
-              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
-                Select from services offered at {barbershop.name}
-              </p>
-
+              <h2 className="font-bold text-3xl text-card-foreground mb-8">Choose Your Service</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {services.map((service) => (
-                  <button
-                    key={service.id}
-                    onClick={() => setSelectedServiceId(service.id)}
-                    className={`p-6 rounded-xl border-2 text-left transition-all ${selectedServiceId === service.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                      }`}
-                  >
-                    <h3 className="font-bold text-lg text-card-foreground mb-2">
-                      {service.name}
-                    </h3>
+                  <button key={service.id} onClick={() => setSelectedServiceId(service.id)} className={`p-6 rounded-xl border-2 text-left transition-all ${selectedServiceId === service.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                    <h3 className="font-bold text-lg text-card-foreground mb-2">{service.name}</h3>
                     <div className="flex items-center gap-3 text-muted-foreground mb-2">
                       <span className="font-bold text-primary">{formatPrice(service.price)}</span>
                       <span className="font-light">{service.duration_minutes} min</span>
                     </div>
-                    <p className="text-muted-foreground font-light text-sm leading-relaxed">
-                      {service.description}
-                    </p>
+                    <p className="text-muted-foreground font-light text-sm leading-relaxed">{service.description}</p>
                   </button>
                 ))}
-                {services.length === 0 && (
-                  <p className="text-muted-foreground col-span-2 text-center py-10">No services available.</p>
-                )}
               </div>
             </div>
           )}
 
-          {/* Step 2: Select Barber */}
           {step === 2 && (
             <div>
-              <h2 className="font-bold text-3xl text-card-foreground mb-3">
-                Choose Your Barber
-              </h2>
-              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
-                Select your preferred barber at {barbershop.name} or choose "No Preference"
-              </p>
-
+              <h2 className="font-bold text-3xl text-card-foreground mb-8">Choose Your Barber</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => setSelectedBarberId("No Preference")}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === "No Preference"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                    }`}
-                >
-                  <h3 className="font-bold text-lg text-card-foreground mb-1">
-                    No Preference
-                  </h3>
-                  <p className="text-muted-foreground font-light text-sm">
-                    Next available barber
-                  </p>
-                </button>
-
                 {barbers.map((barber) => (
-                  <button
-                    key={barber.id}
-                    onClick={() => setSelectedBarberId(barber.id)}
-                    className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === barber.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                      }`}
-                  >
-                    <h3 className="font-bold text-lg text-card-foreground mb-1">
-                      {barber.name}
-                    </h3>
-                    <p className="text-muted-foreground font-light text-sm mb-2">
-                      {barber.title}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {(Array.isArray(barber.specialties)
-                        ? barber.specialties
-                        : (barber.specialties || "").split(",")
-                      ).slice(0, 2).map((specialty) => (
-                        <span
-                          key={specialty.trim()}
-                          className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
-                        >
-                          {specialty.trim()}
-                        </span>
-                      ))}
-                    </div>
+                  <button key={barber.id} onClick={() => setSelectedBarberId(barber.id)} className={`p-6 rounded-xl border-2 text-left transition-all ${selectedBarberId === barber.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                    <h3 className="font-bold text-lg text-card-foreground mb-1">{barber.name}</h3>
+                    <p className="text-muted-foreground font-light text-sm">{barber.title}</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 3: Select Date & Time */}
           {step === 3 && (
             <div>
-              <h2 className="font-bold text-3xl text-card-foreground mb-3">
-                Pick Date & Time
-              </h2>
-              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
-                Choose your preferred appointment date and time
-              </p>
-
+              <h2 className="font-bold text-3xl text-card-foreground mb-8">Pick Date & Time</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Calendar */}
-                <div>
-                  <h3 className="font-bold text-card-foreground mb-4">
-                    Select Date
-                  </h3>
-                  <div className="flex justify-center">
-                    <CalendarComponent
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={(date) => {
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return date < today;
-                      }}
-                      className="rounded-xl border border-border"
-                    />
-                  </div>
+                <div className="flex justify-center">
+                  <CalendarComponent mode="single" selected={selectedDate} onSelect={setSelectedDate} disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))} className="rounded-xl border border-border" />
                 </div>
-
-                {/* Time Slots */}
                 <div>
-                  <h3 className="font-bold text-card-foreground mb-4">
-                    Select Time
-                  </h3>
-                  {loadingSlots ? (
-                    <div className="flex items-center justify-center py-10">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
-                  ) : (
+                  <h3 className="font-bold text-card-foreground mb-4">Select Time</h3>
+                  {loadingSlots ? <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : (
                     <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto pr-2">
-                      {availableSlots.length > 0 ? (
-                        availableSlots.map((time) => (
-                          <button
-                            key={time}
-                            onClick={() => setSelectedTime(time)}
-                            className={`p-3 rounded-lg border text-sm transition-all ${selectedTime === time
-                              ? "border-primary bg-primary text-primary-foreground font-bold"
-                              : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"
-                              }`}
-                          >
-                            {time}
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-muted-foreground text-sm col-span-3 text-center py-4">
-                          {selectedDate ? "No slots available." : "Please select a date first"}
-                        </p>
-                      )}
+                      {availableSlots.map((time) => (
+                        <button key={time} onClick={() => setSelectedTime(time)} className={`p-3 rounded-lg border text-sm transition-all ${selectedTime === time ? "border-primary bg-primary text-primary-foreground font-bold" : "border-border text-card-foreground hover:border-primary/50 hover:bg-primary/5"}`}>{time}</button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -391,141 +256,35 @@ export function Booking() {
             </div>
           )}
 
-          {/* Step 4: Customer Details */}
           {step === 4 && (
             <div>
-              <h2 className="font-bold text-3xl text-card-foreground mb-3">
-                Your Details
-              </h2>
-              <p className="text-muted-foreground font-light mb-8 leading-relaxed">
-                Enter your information to confirm your booking
-              </p>
-
+              <h2 className="font-bold text-3xl text-card-foreground mb-8">Confirm Details</h2>
               <div className="max-w-xl space-y-6">
-                <div>
-                  <label className="block text-card-foreground font-bold mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-card-foreground font-bold mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    placeholder="john@example.com"
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-card-foreground font-bold mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="(555) 123-4567"
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                {/* Booking Summary */}
-                <div className="mt-8 p-6 bg-muted rounded-xl border border-border">
-                  <h3 className="font-bold text-foreground mb-4">
-                    Booking Summary
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <span className="text-muted-foreground font-light">Barbershop:</span>
-                      <div className="text-right">
-                        <span className="text-foreground font-bold block">
-                          {barbershop.name}
-                        </span>
-                        <span className="text-muted-foreground text-sm font-light">
-                          {barbershop.address}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-px bg-border" />
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground font-light">Service:</span>
-                      <span className="text-foreground font-normal">{selectedService?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground font-light">Barber:</span>
-                      <span className="text-foreground font-normal">{selectedBarber?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground font-light">Date:</span>
-                      <span className="text-foreground font-normal">
-                        {selectedDate?.toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground font-light">Time:</span>
-                      <span className="text-foreground font-normal">{selectedTime}</span>
-                    </div>
-                    {selectedService && (
-                      <>
-                        <div className="h-px bg-border" />
-                        <div className="flex justify-between items-center">
-                          <span className="text-foreground font-bold">Total:</span>
-                          <span className="text-primary font-bold text-xl">
-                            {formatPrice(selectedService.price)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Full Name" className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground" />
+                <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="Email Address" className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground" />
+                <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Phone Number" className="w-full px-4 py-3 rounded-lg border border-border bg-input-background text-foreground" />
+                <div className="p-6 bg-muted rounded-xl border border-border">
+                   <h3 className="font-bold mb-4">Summary</h3>
+                   <div className="space-y-2 text-sm">
+                      <p>Barbershop: <span className="font-bold">{barbershop.name}</span></p>
+                      <p>Service: <span className="font-bold">{selectedService?.name}</span></p>
+                      <p>Date: <span className="font-bold">{selectedDate?.toLocaleDateString()}</span></p>
+                      <p>Time: <span className="font-bold">{selectedTime}</span></p>
+                      <p className="pt-2 text-lg">Total: <span className="text-primary font-bold">{formatPrice(selectedService?.price || 0)}</span></p>
+                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex gap-4 mt-12">
-            {step > 1 && (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="px-6 py-3 border border-border rounded-lg text-card-foreground hover:bg-muted transition-colors"
-              >
-                Back
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                if (step < 4) {
-                  setStep(step + 1);
-                } else {
-                  handleBooking();
-                }
-              }}
-              disabled={!canProceed() || submitting}
-              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto flex items-center gap-2 ${canProceed() && !submitting
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
-            >
+            {step > 1 && <button onClick={() => setStep(step - 1)} className="px-6 py-3 border border-border rounded-lg">Back</button>}
+            <button onClick={() => step < 4 ? setStep(step + 1) : handleBooking()} disabled={!canProceed() || submitting} className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto flex items-center gap-2 ${canProceed() && !submitting ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {step === 4 ? (submitting ? "Confirming..." : "Confirm Booking") : "Continue"}
             </button>
           </div>
-          {error && (
-            <p className="mt-4 text-destructive text-center font-medium">{error}</p>
-          )}
+          {error && <p className="mt-4 text-destructive text-center font-medium">{error}</p>}
         </div>
       </div>
     </div>

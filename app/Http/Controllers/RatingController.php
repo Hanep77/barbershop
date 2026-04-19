@@ -3,64 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Models\Rating;
-use App\Http\Requests\StoreRatingRequest;
-use App\Http\Requests\UpdateRatingRequest;
+use App\Models\Barbershop;
+use App\Models\Booking;
+use Illuminate\Http\Request;
 
 class RatingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Barbershop $barbershop)
     {
-        //
+        $ratings = Rating::with('user')
+            ->where('barbershop_id', $barbershop->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['data' => $ratings]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
-    }
+        $validated = $request->validate([
+            'barbershop_id' => 'required|exists:barbershops,id',
+            'booking_id' => 'nullable|exists:bookings,id',
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string',
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreRatingRequest $request)
-    {
-        //
-    }
+        // If booking_id is provided, verify it belongs to the user and is completed
+        if (isset($validated['booking_id'])) {
+            $booking = Booking::where('id', $validated['booking_id'])
+                ->where('user_id', $request->user()->id)
+                ->where('status', 'completed')
+                ->first();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Rating $rating)
-    {
-        //
-    }
+            if (!$booking) {
+                return response()->json(['message' => 'Invalid booking or booking not completed'], 400);
+            }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Rating $rating)
-    {
-        //
-    }
+            // Check if already rated
+            if (Rating::where('booking_id', $validated['booking_id'])->exists()) {
+                return response()->json(['message' => 'This booking has already been rated'], 400);
+            }
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateRatingRequest $request, Rating $rating)
-    {
-        //
-    }
+        $rating = Rating::create(array_merge($validated, [
+            'user_id' => $request->user()->id,
+        ]));
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Rating $rating)
-    {
-        //
+        return response()->json(['message' => 'Rating submitted successfully', 'data' => $rating], 201);
     }
 }
