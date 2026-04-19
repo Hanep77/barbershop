@@ -10,7 +10,11 @@ class BarbershopController extends Controller
 {
     public function index()
     {
-        $barbershops = Barbershop::all();
+        $barbershops = Barbershop::query()
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings')
+            ->withMin('services', 'price')
+            ->get();
         return response()->json($barbershops, 200);
     }
 
@@ -52,7 +56,7 @@ class BarbershopController extends Controller
 
     public function show(Barbershop $barbershop)
     {
-        return response()->json($barbershop->load(["services", "capsters"]));
+        return response()->json($barbershop->load(["services", "capsters"])->loadAvg('ratings', 'rating')->loadCount(['ratings', 'capsters'])->loadMin('services', 'price'));
     }
 
     public function update(Request $request, Barbershop $barbershop)

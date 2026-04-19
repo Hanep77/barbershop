@@ -19,6 +19,10 @@ class Barbershop extends Model
     protected $casts = [
         'open_time' => 'datetime:H:i',
         'close_time' => 'datetime:H:i',
+        'ratings_avg_rating' => 'float',
+        'services_min_price' => 'float',
+        'ratings_count' => 'integer',
+        'capsters_count' => 'integer',
     ];
 
     protected $appends = ["coverImage"];
@@ -51,5 +55,10 @@ class Barbershop extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
     }
 }
