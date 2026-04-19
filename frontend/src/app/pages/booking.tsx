@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Calendar, Clock, User, Scissors, CheckCircle, ChevronRight, MapPin, Loader2 } from "lucide-react";
 import { Calendar as CalendarComponent } from "../components/ui/calendar";
-import api from "../../lib/axios";
 import { getBarbershopById } from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
+import { createBooking, getAvailableSlots } from "../../services/booking";
 import type { Barbershop } from "../../types/barbershop";
 import type { Service } from "../../types/services";
 import type { Capster } from "../../types/capster";
@@ -33,6 +33,8 @@ export function Booking() {
   const [loading, setLoading] = useState(true);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -43,8 +45,10 @@ export function Booking() {
       setLoadingSlots(true);
       try {
         const formattedDate = selectedDate.toISOString().split('T')[0];
-        const res = await api.get(`/api/barbershop/${barbershopId}/available-slots`, {
-          params: { date: formattedDate, service_id: selectedServiceId, capster_id: selectedBarberId }
+        const res = await getAvailableSlots(barbershopId, {
+          date: formattedDate,
+          service_id: selectedServiceId,
+          capster_id: selectedBarberId
         });
         setAvailableSlots(res.data.slots);
       } catch (err) {
@@ -106,9 +110,36 @@ export function Booking() {
     return null;
   }
 
-  const handleBooking = () => {
-    // In a real app, this would submit to a backend
-    navigate("/my-bookings");
+  const handleBooking = async () => {
+    if (!selectedServiceId || !selectedBarberId || !selectedDate || !selectedTime) {
+      setError("Please complete all booking steps.");
+      return;
+    }
+
+    if (selectedBarberId === "No Preference") {
+        setError("Please select a specific barber for now.");
+        return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      await createBooking({
+        barbershop_id: barbershopId,
+        service_id: selectedServiceId,
+        capster_id: selectedBarberId,
+        booking_date: formattedDate,
+        booking_time: selectedTime,
+      });
+      navigate("/my-bookings");
+    } catch (err: any) {
+      console.error("Booking failed:", err);
+      setError(err.response?.data?.message || "Booking failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canProceed = () => {
@@ -116,7 +147,7 @@ export function Booking() {
       case 1:
         return selectedServiceId !== "";
       case 2:
-        return selectedBarberId !== "";
+        return selectedBarberId !== "" && selectedBarberId !== "No Preference";
       case 3:
         return selectedDate !== undefined && selectedTime !== "";
       case 4:
@@ -482,15 +513,19 @@ export function Booking() {
                   handleBooking();
                 }
               }}
-              disabled={!canProceed()}
-              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto ${canProceed()
+              disabled={!canProceed() || submitting}
+              className={`px-8 py-3 rounded-lg font-bold transition-colors ml-auto flex items-center gap-2 ${canProceed() && !submitting
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
             >
-              {step === 4 ? "Confirm Booking" : "Continue"}
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {step === 4 ? (submitting ? "Confirming..." : "Confirm Booking") : "Continue"}
             </button>
           </div>
+          {error && (
+            <p className="mt-4 text-destructive text-center font-medium">{error}</p>
+          )}
         </div>
       </div>
     </div>
