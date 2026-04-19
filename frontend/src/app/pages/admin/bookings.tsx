@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Calendar, Clock, User, DollarSign, Filter, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, User, DollarSign, Filter, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -13,119 +13,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Avatar, AvatarFallback } from "../../components/ui/avatar";
 import { toast } from "sonner";
+import { getPartnerBookings, updateBookingStatus } from "../../../services/booking";
+import type { Booking } from "../../../types/booking";
 
-type BookingStatus = "pending" | "in-progress" | "completed" | "cancelled";
-
-interface Booking {
-  id: number;
-  customer: string;
-  customerEmail: string;
-  service: string;
-  barber: string;
-  date: string;
-  time: string;
-  status: BookingStatus;
-  price: string;
-  notes?: string;
-}
-
-// Mock bookings for Marcus & Co.
-const initialBookings: Booking[] = [
-  {
-    id: 1,
-    customer: "John Anderson",
-    customerEmail: "john.anderson@email.com",
-    service: "Signature Cut & Style",
-    barber: "Marcus Johnson",
-    date: "2026-03-25",
-    time: "2:00 PM",
-    status: "pending",
-    price: "$65",
-  },
-  {
-    id: 2,
-    customer: "Michael Roberts",
-    customerEmail: "michael.r@email.com",
-    service: "Classic Cut",
-    barber: "David Chen",
-    date: "2026-03-25",
-    time: "3:30 PM",
-    status: "pending",
-    price: "$45",
-  },
-  {
-    id: 3,
-    customer: "Chris Johnson",
-    customerEmail: "chris.j@email.com",
-    service: "Beard Trim & Shape",
-    barber: "Marcus Johnson",
-    date: "2026-03-25",
-    time: "5:00 PM",
-    status: "pending",
-    price: "$35",
-  },
-  {
-    id: 4,
-    customer: "David Thompson",
-    customerEmail: "d.thompson@email.com",
-    service: "Beard Trim & Shape",
-    barber: "Marcus Johnson",
-    date: "2026-03-24",
-    time: "11:00 AM",
-    status: "completed",
-    price: "$35",
-  },
-  {
-    id: 5,
-    customer: "James Wilson",
-    customerEmail: "james.w@email.com",
-    service: "The Full Experience",
-    barber: "David Chen",
-    date: "2026-03-24",
-    time: "1:00 PM",
-    status: "completed",
-    price: "$95",
-  },
-  {
-    id: 6,
-    customer: "Robert Martinez",
-    customerEmail: "robert.m@email.com",
-    service: "Classic Cut",
-    barber: "Marcus Johnson",
-    date: "2026-03-23",
-    time: "4:00 PM",
-    status: "completed",
-    price: "$45",
-  },
-  {
-    id: 7,
-    customer: "William Brown",
-    customerEmail: "will.brown@email.com",
-    service: "Signature Cut & Style",
-    barber: "David Chen",
-    date: "2026-03-23",
-    time: "2:30 PM",
-    status: "completed",
-    price: "$65",
-  },
-  {
-    id: 8,
-    customer: "Thomas Garcia",
-    customerEmail: "thomas.g@email.com",
-    service: "Kids Cut",
-    barber: "Marcus Johnson",
-    date: "2026-03-22",
-    time: "10:00 AM",
-    status: "completed",
-    price: "$30",
-  },
-];
-
-const getStatusColor = (status: BookingStatus) => {
+const getStatusColor = (status: Booking['status']) => {
   switch (status) {
     case "pending":
       return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-    case "in-progress":
+    case "confirmed":
       return "bg-blue-500/10 text-blue-500 border-blue-500/20";
     case "completed":
       return "bg-green-500/10 text-green-500 border-green-500/20";
@@ -136,11 +31,11 @@ const getStatusColor = (status: BookingStatus) => {
   }
 };
 
-const getStatusIcon = (status: BookingStatus) => {
+const getStatusIcon = (status: Booking['status']) => {
   switch (status) {
     case "pending":
       return AlertCircle;
-    case "in-progress":
+    case "confirmed":
       return Clock;
     case "completed":
       return CheckCircle;
@@ -152,48 +47,87 @@ const getStatusIcon = (status: BookingStatus) => {
 };
 
 export function AdminBookings() {
-  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterBarber, setFilterBarber] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const barbers = Array.from(new Set(bookings.map((b) => b.barber)));
+  const fetchBookings = async () => {
+    try {
+      const res = await getPartnerBookings();
+      setBookings(res.data.data);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      toast.error("Failed to load bookings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const barbers = Array.from(new Set(bookings.map((b) => b.capster?.name).filter(Boolean)));
 
   const filteredBookings = bookings.filter((booking) => {
-    const matchBarber = filterBarber === "all" || booking.barber === filterBarber;
+    const matchBarber = filterBarber === "all" || booking.capster?.name === filterBarber;
     const matchStatus = filterStatus === "all" || booking.status === filterStatus;
     return matchBarber && matchStatus;
   });
 
   const upcomingBookings = filteredBookings
-    .filter((b) => b.status === "pending" || b.status === "in-progress")
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((b) => b.status === "pending" || b.status === "confirmed")
+    .sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
   const completedBookings = filteredBookings
-    .filter((b) => b.status === "completed")
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .filter((b) => b.status === "completed" || b.status === "cancelled")
+    .sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
 
-  const handleStatusChange = (id: number, newStatus: BookingStatus) => {
-    setBookings(
-      bookings.map((booking) =>
-        booking.id === id ? { ...booking, status: newStatus } : booking
-      )
-    );
-    toast.success(`Booking status updated to ${newStatus}`);
+  const handleStatusChange = async (id: string, newStatus: Booking['status']) => {
+    try {
+      await updateBookingStatus(id, newStatus);
+      setBookings(
+        bookings.map((booking) =>
+          booking.id === id ? { ...booking, status: newStatus } : booking
+        )
+      );
+      toast.success(`Booking status updated to ${newStatus}`);
+    } catch (err) {
+      console.error("Error updating status:", err);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   const stats = {
     total: bookings.length,
     pending: bookings.filter((b) => b.status === "pending").length,
-    inProgress: bookings.filter((b) => b.status === "in-progress").length,
+    confirmed: bookings.filter((b) => b.status === "confirmed").length,
     completed: bookings.filter((b) => b.status === "completed").length,
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-muted">
         <div className="p-6">
-          <h1 className="text-foreground mb-1">Bookings Management</h1>
+          <h1 className="text-foreground mb-1 text-2xl font-bold">Bookings Management</h1>
           <p className="text-sm text-muted-foreground">
             Monitor and manage customer appointments
           </p>
@@ -203,40 +137,40 @@ export function AdminBookings() {
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="p-6 bg-card">
+          <Card className="p-6 bg-card border-border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
                   Total Bookings
                 </p>
-                <p className="text-2xl text-card-foreground">{stats.total}</p>
+                <p className="text-2xl font-bold text-card-foreground">{stats.total}</p>
               </div>
               <Calendar className="w-8 h-8 text-primary" />
             </div>
           </Card>
-          <Card className="p-6 bg-card">
+          <Card className="p-6 bg-card border-border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Pending</p>
-                <p className="text-2xl text-amber-500">{stats.pending}</p>
+                <p className="text-2xl font-bold text-amber-500">{stats.pending}</p>
               </div>
               <AlertCircle className="w-8 h-8 text-amber-500" />
             </div>
           </Card>
-          <Card className="p-6 bg-card">
+          <Card className="p-6 bg-card border-border">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">In Progress</p>
-                <p className="text-2xl text-blue-500">{stats.inProgress}</p>
+                <p className="text-sm text-muted-foreground mb-1">Confirmed</p>
+                <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
               </div>
               <Clock className="w-8 h-8 text-blue-500" />
             </div>
           </Card>
-          <Card className="p-6 bg-card">
+          <Card className="p-6 bg-card border-border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                <p className="text-2xl text-green-500">{stats.completed}</p>
+                <p className="text-2xl font-bold text-green-500">{stats.completed}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
@@ -244,7 +178,7 @@ export function AdminBookings() {
         </div>
 
         {/* Filters */}
-        <Card className="bg-card">
+        <Card className="bg-card border-border">
           <div className="p-4">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
@@ -271,7 +205,7 @@ export function AdminBookings() {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
@@ -299,12 +233,12 @@ export function AdminBookings() {
               Upcoming ({upcomingBookings.length})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              Completed ({completedBookings.length})
+              Past / Finished ({completedBookings.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="mt-6">
-            <Card className="bg-card">
+            <Card className="bg-card border-border">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -344,30 +278,29 @@ export function AdminBookings() {
                             <div className="flex items-center gap-3">
                               <Avatar className="w-8 h-8">
                                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {booking.customer
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
+                                  {booking.user?.name
+                                    ? booking.user.name.split(" ").map((n) => n[0]).join("")
+                                    : "U"}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="text-sm text-card-foreground">
-                                  {booking.customer}
+                                <p className="text-sm font-medium text-card-foreground">
+                                  {booking.user?.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {booking.customerEmail}
+                                  {booking.user?.email}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-card-foreground">
-                              {booking.service}
+                              {booking.service?.name}
                             </p>
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-card-foreground">
-                              {booking.barber}
+                              {booking.capster?.name}
                             </p>
                           </td>
                           <td className="px-6 py-4">
@@ -375,7 +308,7 @@ export function AdminBookings() {
                               <Calendar className="w-4 h-4 text-muted-foreground" />
                               <div>
                                 <p className="text-sm text-card-foreground">
-                                  {new Date(booking.date).toLocaleDateString(
+                                  {new Date(booking.booking_date).toLocaleDateString(
                                     "en-US",
                                     {
                                       month: "short",
@@ -385,7 +318,7 @@ export function AdminBookings() {
                                   )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {booking.time}
+                                  {booking.booking_time}
                                 </p>
                               </div>
                             </div>
@@ -400,8 +333,8 @@ export function AdminBookings() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.price}
+                            <p className="text-sm font-medium text-card-foreground">
+                              {booking.service ? formatPrice(booking.service.price) : "-"}
                             </p>
                           </td>
                           <td className="px-6 py-4">
@@ -410,7 +343,7 @@ export function AdminBookings() {
                               onValueChange={(value) =>
                                 handleStatusChange(
                                   booking.id,
-                                  value as BookingStatus
+                                  value as Booking['status']
                                 )
                               }
                             >
@@ -419,8 +352,8 @@ export function AdminBookings() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="in-progress">
-                                  In Progress
+                                <SelectItem value="confirmed">
+                                  Confirmed
                                 </SelectItem>
                                 <SelectItem value="completed">
                                   Completed
@@ -449,7 +382,7 @@ export function AdminBookings() {
           </TabsContent>
 
           <TabsContent value="completed" className="mt-6">
-            <Card className="bg-card">
+            <Card className="bg-card border-border">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -486,30 +419,29 @@ export function AdminBookings() {
                             <div className="flex items-center gap-3">
                               <Avatar className="w-8 h-8">
                                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {booking.customer
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")}
+                                  {booking.user?.name
+                                    ? booking.user.name.split(" ").map((n) => n[0]).join("")
+                                    : "U"}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="text-sm text-card-foreground">
-                                  {booking.customer}
+                                <p className="text-sm font-medium text-card-foreground">
+                                  {booking.user?.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {booking.customerEmail}
+                                  {booking.user?.email}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-card-foreground">
-                              {booking.service}
+                              {booking.service?.name}
                             </p>
                           </td>
                           <td className="px-6 py-4">
                             <p className="text-sm text-card-foreground">
-                              {booking.barber}
+                              {booking.capster?.name}
                             </p>
                           </td>
                           <td className="px-6 py-4">
@@ -517,7 +449,7 @@ export function AdminBookings() {
                               <Calendar className="w-4 h-4 text-muted-foreground" />
                               <div>
                                 <p className="text-sm text-card-foreground">
-                                  {new Date(booking.date).toLocaleDateString(
+                                  {new Date(booking.booking_date).toLocaleDateString(
                                     "en-US",
                                     {
                                       month: "short",
@@ -527,7 +459,7 @@ export function AdminBookings() {
                                   )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {booking.time}
+                                  {booking.booking_time}
                                 </p>
                               </div>
                             </div>
@@ -542,8 +474,8 @@ export function AdminBookings() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4">
-                            <p className="text-sm text-card-foreground">
-                              {booking.price}
+                            <p className="text-sm font-medium text-card-foreground">
+                                {booking.service ? formatPrice(booking.service.price) : "-"}
                             </p>
                           </td>
                         </tr>
@@ -555,7 +487,7 @@ export function AdminBookings() {
                   <div className="p-12 text-center">
                     <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
-                      No completed bookings found
+                      No completed or cancelled bookings found
                     </p>
                   </div>
                 )}

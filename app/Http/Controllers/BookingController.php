@@ -55,6 +55,51 @@ class BookingController extends Controller
         return response()->json(['slots' => $availableSlots]);
     }
 
+    public function index(Request $request)
+    {
+        $bookings = Booking::with(['barbershop', 'service', 'capster'])
+            ->where('user_id', $request->user()->id)
+            ->orderBy('booking_date', 'desc')
+            ->orderBy('booking_time', 'desc')
+            ->get();
+
+        return response()->json(['data' => $bookings]);
+    }
+
+    public function partnerIndex(Request $request)
+    {
+        $barbershop = $request->user()->barbershop;
+
+        if (!$barbershop) {
+            return response()->json(['message' => 'Barbershop not found'], 404);
+        }
+
+        $bookings = Booking::with(['user', 'service', 'capster'])
+            ->where('barbershop_id', $barbershop->id)
+            ->orderBy('booking_date', 'desc')
+            ->orderBy('booking_time', 'desc')
+            ->get();
+
+        return response()->json(['data' => $bookings]);
+    }
+
+    public function updateStatus(Request $request, Booking $booking)
+    {
+        $barbershop = $request->user()->barbershop;
+
+        if (!$barbershop || $booking->barbershop_id !== $barbershop->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:pending,confirmed,completed,cancelled'
+        ]);
+
+        $booking->update($validated);
+
+        return response()->json(['message' => 'Booking status updated successfully', 'booking' => $booking]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

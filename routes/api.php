@@ -27,6 +27,9 @@ Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
 
+    Route::get("/bookings", [BookingController::class, "index"]);
+    Route::post("/bookings", [BookingController::class, "store"]);
+    
     // Route::resouece("/barbershop", BarbershopController::class);
     Route::post("/barbershop", [BarbershopController::class, "store"]);
     Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
@@ -40,6 +43,9 @@ Route::middleware("auth:sanctum")->group(function () {
             Route::resource('/services', ServiceController::class);
             Route::resource('/service-categories', ServiceCategoryController::class);
             Route::resource('/capsters', CapsterController::class);
+            
+            Route::get('/bookings', [BookingController::class, 'partnerIndex']);
+            Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
         });
     });
 

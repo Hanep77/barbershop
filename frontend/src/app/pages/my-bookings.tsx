@@ -1,13 +1,46 @@
-import { useState } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Mail, Store } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, User, MapPin, Phone, Mail, Store, Loader2 } from "lucide-react";
 import { Link } from "react-router";
-import { mockBookings } from "../data/marketplace-data";
+import { getUserBookings } from "../../services/booking";
+import type { Booking } from "../../types/booking";
 
 export function MyBookings() {
-  const [bookings] = useState(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const upcomingBookings = bookings.filter((b) => b.status === "upcoming");
-  const pastBookings = bookings.filter((b) => b.status === "completed");
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await getUserBookings();
+        setBookings(res.data.data);
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, []);
+
+  const upcomingBookings = bookings.filter((b) => b.status === "pending" || b.status === "confirmed");
+  const pastBookings = bookings.filter((b) => b.status === "completed" || b.status === "cancelled");
+
+  // Helper to format currency
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-16">
@@ -42,16 +75,16 @@ export function MyBookings() {
                         <div className="flex items-center gap-2 mb-2">
                           <Store className="w-5 h-5 text-primary" />
                           <h3 className="font-bold text-2xl text-card-foreground">
-                            {booking.barbershopName}
+                            {booking.barbershop?.name}
                           </h3>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground mb-4">
                           <MapPin className="w-4 h-4" />
-                          <span className="font-light">{booking.barbershopLocation}</span>
+                          <span className="font-light">{booking.barbershop?.address}</span>
                         </div>
                       </div>
                       <span className="font-bold text-primary text-2xl">
-                        {booking.price}
+                        {booking.service ? formatPrice(booking.service.price) : "-"}
                       </span>
                     </div>
 
@@ -64,7 +97,7 @@ export function MyBookings() {
                           Service
                         </p>
                         <p className="font-bold text-card-foreground">
-                          {booking.service}
+                          {booking.service?.name}
                         </p>
                       </div>
 
@@ -75,7 +108,7 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-primary" />
                           <p className="font-bold text-card-foreground">
-                            {booking.barber}
+                            {booking.capster?.name}
                           </p>
                         </div>
                       </div>
@@ -87,7 +120,7 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-primary" />
                           <p className="font-bold text-card-foreground">
-                            {booking.date}
+                            {new Date(booking.booking_date).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -99,26 +132,35 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-primary" />
                           <p className="font-bold text-card-foreground">
-                            {booking.time}
+                            {booking.booking_time}
                           </p>
                         </div>
                       </div>
                     </div>
 
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                        {booking.status}
+                      </span>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
                       <Link
-                        to={`/barbershop/${booking.barbershopId}`}
+                        to={`/barbershop/${booking.barbershop_id}`}
                         className="px-6 py-2.5 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors text-center"
                       >
                         View Barbershop
                       </Link>
-                      <button className="px-6 py-2.5 border border-border rounded-lg text-card-foreground hover:bg-muted transition-colors">
-                        Reschedule
-                      </button>
-                      <button className="px-6 py-2.5 border border-destructive text-destructive rounded-lg hover:bg-destructive/10 transition-colors">
-                        Cancel
-                      </button>
+                      {booking.status === 'pending' && (
+                        <button className="px-6 py-2.5 border border-destructive text-destructive rounded-lg hover:bg-destructive/10 transition-colors">
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -163,18 +205,18 @@ export function MyBookings() {
                         <div className="flex items-center gap-2 mb-2">
                           <Store className="w-5 h-5 text-muted-foreground" />
                           <h3 className="font-bold text-xl text-card-foreground">
-                            {booking.barbershopName}
+                            {booking.barbershop?.name}
                           </h3>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <MapPin className="w-4 h-4" />
                           <span className="font-light text-sm">
-                            {booking.barbershopLocation}
+                            {booking.barbershop?.address}
                           </span>
                         </div>
                       </div>
                       <span className="font-bold text-muted-foreground text-lg">
-                        {booking.price}
+                        {booking.service ? formatPrice(booking.service.price) : "-"}
                       </span>
                     </div>
 
@@ -187,7 +229,7 @@ export function MyBookings() {
                           Service
                         </p>
                         <p className="text-card-foreground">
-                          {booking.service}
+                          {booking.service?.name}
                         </p>
                       </div>
 
@@ -198,7 +240,7 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           <p className="text-card-foreground">
-                            {booking.barber}
+                            {booking.capster?.name}
                           </p>
                         </div>
                       </div>
@@ -210,7 +252,7 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-muted-foreground" />
                           <p className="text-card-foreground">
-                            {booking.date}
+                            {new Date(booking.booking_date).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -222,7 +264,7 @@ export function MyBookings() {
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-muted-foreground" />
                           <p className="text-card-foreground">
-                            {booking.time}
+                            {booking.booking_time}
                           </p>
                         </div>
                       </div>
@@ -231,20 +273,17 @@ export function MyBookings() {
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
                       <Link
-                        to={`/barbershop/${booking.barbershopId}`}
+                        to={`/barbershop/${booking.barbershop_id}`}
                         className="px-6 py-2.5 border border-border text-card-foreground rounded-lg hover:bg-muted transition-colors text-center"
                       >
                         View Barbershop
                       </Link>
                       <Link
-                        to={`/booking?barbershop_id=${booking.barbershopId}`}
+                        to={`/booking?barbershop_id=${booking.barbershop_id}`}
                         className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-center"
                       >
                         Book Again
                       </Link>
-                      <button className="px-6 py-2.5 border border-border text-card-foreground rounded-lg hover:bg-muted transition-colors">
-                        Leave Review
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -258,6 +297,7 @@ export function MyBookings() {
             </div>
           )}
         </section>
+        ...
 
         {/* Contact Info */}
         <section className="mt-16 bg-muted rounded-xl p-8">
