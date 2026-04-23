@@ -8,8 +8,10 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\RatingController;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -32,6 +34,11 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get("/bookings", [BookingController::class, "index"]);
     Route::post("/bookings", [BookingController::class, "store"]);
     Route::post("/ratings", [RatingController::class, "store"]);
+
+    Route::get("/notifications", [\App\Http\Controllers\NotificationController::class, "index"]);
+    Route::get("/notifications/unread-count", [\App\Http\Controllers\NotificationController::class, "unreadCount"]);
+    Route::post("/notifications/{notification}/read", [\App\Http\Controllers\NotificationController::class, "markAsRead"]);
+    Route::post("/notifications/read-all", [\App\Http\Controllers\NotificationController::class, "markAllAsRead"]);
     
     // Barbershop management
     Route::post("/barbershop", [BarbershopController::class, "store"]);

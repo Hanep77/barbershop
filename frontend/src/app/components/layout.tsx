@@ -16,7 +16,8 @@ import { useState, useEffect } from "react";
 import { FloatingChatButton } from "./floating-chat-button";
 import { SmartChatbotWidget } from "./smart-chatbot-widget";
 import useAuthStore from "../../store/authStore";
-import { UserMenu } from "./user-menu";
+import UserMenu from "./user-menu";
+import NotificationBell from "./notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 
@@ -111,7 +112,10 @@ export function Layout() {
               {/* Auth Buttons (Desktop) */}
               <div className="hidden md:flex items-center gap-4">
                 {user ? (
-                  <UserMenu />
+                  <>
+                    <NotificationBell />
+                    <UserMenu />
+                  </>
                 ) : (
                   <>
                     <Link
@@ -260,8 +264,8 @@ export function Layout() {
                     <Link
                       to="/admin/dashboard"
                       className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/admin/dashboard")
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted/50"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted/50"
                         }`}
                     >
                       <LayoutDashboard
