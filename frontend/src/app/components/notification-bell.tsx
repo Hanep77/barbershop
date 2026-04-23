@@ -106,7 +106,7 @@ const NotificationBell: React.FC = () => {
                         notifications.map((notification) => (
                             <DropdownMenuItem 
                                 key={notification.id} 
-                                className={`p-4 cursor-default focus:bg-accent flex flex-col items-start gap-1 ${!notification.is_read ? 'bg-blue-50/50' : ''}`}
+                                className={`p-4 cursor-default focus:bg-accent flex flex-col items-start gap-1 border-b last:border-0 ${!notification.is_read ? 'bg-muted/30' : ''}`}
                             >
                                 <div className="flex w-full items-start justify-between gap-2">
                                     <div className="flex items-center gap-2">
@@ -142,3 +142,4 @@ const NotificationBell: React.FC = () => {
 };
 
 export default NotificationBell;
+
