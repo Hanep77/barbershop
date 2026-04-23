@@ -10,6 +10,8 @@ import {
   Store,
   PocketKnife,
 } from "lucide-react";
+import NotificationBell from "./notification-bell";
+import UserMenu from "./user-menu";
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -118,7 +120,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">{children || <Outlet />}</main>
+      <main className="flex-1 overflow-auto flex flex-col">
+        {/* Header */}
+        <header className="h-16 border-b border-border bg-background flex items-center justify-end px-8 sticky top-0 z-10 gap-4">
+          <NotificationBell />
+          <UserMenu />
+        </header>
+        <div className="flex-1">
+          {children || <Outlet />}
+        </div>
+      </main>
     </div>
   );
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Barbershop;
 use App\Models\Service;
+use App\Models\Notification;
+use App\Events\NotificationSent;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -114,6 +116,25 @@ class BookingController extends Controller
             'user_id' => $request->user()->id,
             'status' => 'pending'
         ]));
+
+        // Load barbershop owner to notify
+        $barbershop = Barbershop::findOrFail($validated['barbershop_id']);
+        $owner = $barbershop->user;
+
+        if ($owner) {
+            $formattedDate = \Carbon\Carbon::parse($booking->booking_date)->format('M d, Y');
+            $formattedTime = \Carbon\Carbon::parse($booking->booking_time)->format('h:i A');
+
+            $notification = Notification::create([
+                'user_id' => $owner->id,
+                'title' => 'New Booking Alert!',
+                'message' => 'A new booking has been made for ' . $barbershop->name . ' on ' . $formattedDate . ' at ' . $formattedTime,
+                'type' => 'booking_created',
+                'is_read' => false,
+            ]);
+
+            event(new NotificationSent($notification));
+        }
 
         return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
     }
