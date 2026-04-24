@@ -6,6 +6,8 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,4 +42,12 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);
     Route::delete("/barbershop/services/{service}", [ServiceController::class, "destroy"]);
+
+    // Bookings
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+
+    // Payments
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
 });

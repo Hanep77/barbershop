@@ -11,22 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('barbershops', function (Blueprint $table) {
-            $table->uuid("id")->primary();
-            $table->foreignUuid("user_id")->constrained()->unique();
-            $table->string("name", 100);
-            $table->text("address");
-            $table->string("map_url")->nullable();
-            $table->string("phone_number", 15);
-            $table->text("description")->nullable();
-            $table->boolean("is_active")->default(true);
-            $table->string("latitude");
-            $table->string("longitude");
+        Schema::table('barbershops', function (Blueprint $table) {
             $table->decimal('balance', 15, 2)->default(0)->after('longitude');
             $table->string('bank_name')->nullable()->after('balance');
             $table->string('account_name')->nullable()->after('bank_name');
             $table->string('account_number')->nullable()->after('account_name');
-            $table->timestamps();
         });
     }
 

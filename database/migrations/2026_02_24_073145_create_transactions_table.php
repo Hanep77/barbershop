@@ -18,6 +18,12 @@ return new class extends Migration
             $table->dateTime('booking_date');
             $table->enum('status', ['pending', 'confirmed', 'cancelled'])->default('pending');
             $table->decimal('total_price', 8, 2);
+            $table->foreignUuid('service_id')->constrained()->onDelete('cascade')->after('barbershop_id');
+            $table->foreignUuid('capster_id')->constrained()->onDelete('cascade')->after('service_id');
+            $table->time('start_time')->after('booking_date');
+            $table->time('end_time')->after('start_time');
+            $table->text('cancellation_reason')->nullable()->after('status');
+            $table->decimal('refund_amount', 8, 2)->default(0)->after('cancellation_reason');
             $table->timestamps();
         });
     }
@@ -27,6 +33,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transactions');
+        Schema::table('transactions', function (Blueprint $table) {
+            $table->dropForeign(['service_id']);
+            $table->dropForeign(['capster_id']);
+            $table->dropColumn(['service_id', 'capster_id', 'start_time', 'end_time', 'cancellation_reason', 'refund_amount']);
+        });
     }
 };
