@@ -26,6 +26,8 @@ return new class extends Migration
             $table->string('bank_name')->nullable()->after('balance');
             $table->string('account_name')->nullable()->after('bank_name');
             $table->string('account_number')->nullable()->after('account_name');
+            $table->time("open_time")->default("09:00");
+            $table->time("close_time")->default("21:00");
             $table->timestamps();
         });
     }

@@ -14,6 +14,12 @@ class Capster extends Model
 
     protected $guarded = ["id"];
 
+    protected $casts = [
+        "specialties" => "array",
+        "is_available" => "boolean",
+        "rating" => "double",
+    ];
+
     public function newUniqueId(): string
     {
         return (string) Uuid::uuid7();

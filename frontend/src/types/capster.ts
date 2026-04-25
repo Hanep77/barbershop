@@ -5,7 +5,7 @@ export type Capster = {
   title: string;
   experience: string;
   rating: number;
-  specialties: string;
+  specialties: string[];
   bio: string;
   phone: string;
   is_available: boolean;

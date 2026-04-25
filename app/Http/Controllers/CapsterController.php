@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Capster;
+use App\Models\Barbershop;
 use Illuminate\Http\Request;
 
 class CapsterController extends Controller
@@ -10,13 +11,16 @@ class CapsterController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request, Barbershop $barbershop = null)
     {
         try {
-            $barbershop = $request->user()->barbershop;
+            if (!$barbershop) {
+                $barbershop = $request->user()->barbershop;
+            }
+
             if (!$barbershop) {
                 return response()->json([
-                    "message" => "Barbershop not found for the authenticated user",
+                    "message" => "Barbershop not found",
                 ], 404);
             }
 
@@ -64,7 +68,7 @@ class CapsterController extends Controller
                 "experience" => "string|max:255",
                 "rating" => "numeric|min:0|max:5",
                 "specialties" => "array",
-                "specialties*" => "array",
+                "specialties.*" => "string",
                 "bio" => "string",
                 "phone" => "string|max:20",
                 "image" => "string|max:255",
@@ -72,7 +76,6 @@ class CapsterController extends Controller
 
             $capster["barbershop_id"] = $barbershop->id;
             $capster["rating"] = $capster["rating"] ?? 0.0;
-            $capster["specialties"] = json_encode($capster["specialties"] ?? []);
             $capster["image"] = $capster["image"] ?? "https://ui-avatars.com/api/?name=" . urlencode($capster["name"]);
 
             $newCapster = Capster::create($capster);

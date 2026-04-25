@@ -1,3 +1,6 @@
+import type { Capster } from "./capster";
+import type { Service } from "./services";
+
 export interface Barbershop {
   id: string;
   user_id: string;
@@ -12,6 +15,14 @@ export interface Barbershop {
   coverImage: string;
   created_at: Date;
   updated_at: Date;
+  ratings_avg_rating?: number | null;
+  ratings_count?: number;
+  capsters_count?: number;
+  services_min_price?: number | null;
+  open_time?: string;
+  close_time?: string;
+  capsters?: Capster[];
+  services?: Service[];
 }
 
 export type CreateBarbershopInput = Omit<

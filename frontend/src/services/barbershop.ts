@@ -24,3 +24,7 @@ export const getAllBarbershop = async () => {
   const barber = await api.get("/api/barbershop");
   return barber;
 };
+
+export const getBarbershopById = async (id: string) => {
+  return await api.get(`/api/barbershop/${id}`);
+};

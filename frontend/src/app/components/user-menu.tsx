@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
-export function UserMenu() {
+export default function UserMenu() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
 

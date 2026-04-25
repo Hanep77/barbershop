@@ -139,7 +139,7 @@ export function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {barbershops.map((barbershop) => (
-              <BarbershopCard barbershop={barbershop} />
+              <BarbershopCard barbershop={barbershop} key={barbershop.id} />
             ))}
           </div>
         </div>
@@ -161,7 +161,7 @@ export function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {barbershops.map((barbershop) => (
-            <BarbershopCard barbershop={barbershop} />
+            <BarbershopCard barbershop={barbershop} key={barbershop.id} />
           ))}
         </div>
       </section>

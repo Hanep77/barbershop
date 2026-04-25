@@ -18,6 +18,7 @@ import {
   adminCreateServiceCategory,
   adminGetServiceCategories,
   adminDeleteServiceCategory,
+  adminUpdateServiceCategory,
 } from "../../../services/serviceCategory";
 import type {
   ServiceCategory,
@@ -63,12 +64,18 @@ export function AdminServiceCategory() {
     e.preventDefault();
     const payload = formData as CreateServiceCategoryRequest;
 
-    await adminCreateServiceCategory(payload)
+    if (!editingCategory) return;
+
+    await adminUpdateServiceCategory(editingCategory.id, payload)
       .then((res) => {
         const { category } = res.data;
         toast.success("Category updated successfully!");
         handleCloseDialog();
-        setCategories((prev) => [category, ...(prev || [])]);
+        setCategories((prev) =>
+          (prev || []).map((item) =>
+            item?.id === editingCategory.id ? category : item
+          )
+        );
       })
       .catch((err: unknown) => {
         if (err instanceof AxiosError) {
@@ -106,7 +113,7 @@ export function AdminServiceCategory() {
         if (error instanceof AxiosError) {
           toast.error(
             error.response?.data?.message ||
-              "Failed to fetch service categories",
+            "Failed to fetch service categories",
           );
           return;
         }

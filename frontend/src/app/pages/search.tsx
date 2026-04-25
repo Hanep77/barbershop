@@ -1,19 +1,25 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
-import { Search as SearchIcon, MapPin, Star, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { barbershops } from "../data/marketplace-data";
+import { useSearchParams } from "react-router";
+import { Search as SearchIcon, MapPin, SlidersHorizontal, Sparkles, X, Loader2 } from "lucide-react";
+import useBarbershopStore from "../../store/barbershopStore";
+import BarbershopCard from "../components/barbershop-card";
 
 export function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const { barbershops, fetchBarbershops, loading } = useBarbershopStore();
+
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
     searchParams.get("specialty")
   );
 
   const isAIRecommended = searchParams.get("ai_recommended") === "true";
+
+  useEffect(() => {
+    fetchBarbershops();
+  }, []);
 
   useEffect(() => {
     // Sync specialty from URL params
@@ -23,14 +29,13 @@ export function Search() {
     }
   }, [searchParams]);
 
-  // Filter barbershops by specialty
-  const results = selectedSpecialty
-    ? barbershops.filter((shop) =>
-        shop.specialties?.some(
-          (s) => s.toLowerCase() === selectedSpecialty.toLowerCase()
-        )
-      )
-    : barbershops;
+  // Simple client-side filtering for now
+  const results = barbershops.filter((shop) => {
+    const matchesQuery = shop.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLocation = shop.address.toLowerCase().includes(locationQuery.toLowerCase());
+    // Note: specialty filtering is currently limited as it's not well-defined in the backend yet
+    return matchesQuery && matchesLocation;
+  });
 
   const clearAIFilter = () => {
     setSelectedSpecialty(null);
@@ -45,7 +50,7 @@ export function Search() {
           <h1 className="font-bold text-4xl text-foreground mb-6">
             Browse Barbershops
           </h1>
-          
+
           {/* Search Bar */}
           <div className="bg-card rounded-xl p-4 border border-border shadow-lg">
             <div className="flex flex-col md:flex-row gap-3">
@@ -53,7 +58,7 @@ export function Search() {
                 <SearchIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search barbershop or service..."
+                  placeholder="Search barbershop..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-transparent text-card-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -63,7 +68,7 @@ export function Search() {
                 <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <input
                   type="text"
-                  placeholder="Location or zip code..."
+                  placeholder="Location..."
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
                   className="w-full bg-transparent text-card-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -83,7 +88,10 @@ export function Search() {
             <div className="bg-card rounded-xl p-6 border border-border sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-card-foreground">Filters</h3>
-                <button className="text-primary text-sm font-normal hover:text-primary/80">
+                <button className="text-primary text-sm font-normal hover:text-primary/80" onClick={() => {
+                  setSearchQuery("");
+                  setLocationQuery("");
+                }}>
                   Clear All
                 </button>
               </div>
@@ -121,30 +129,9 @@ export function Search() {
                         name="rating"
                         className="w-4 h-4 border-border text-primary focus:ring-primary"
                       />
-                      <Star className="w-4 h-4 fill-primary text-primary" />
+                      <Sparkles className="w-4 h-4 fill-primary text-primary" />
                       <span className="text-muted-foreground font-light">
                         {rating}+
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Distance */}
-              <div>
-                <h4 className="font-bold text-card-foreground mb-3 text-sm">
-                  Distance
-                </h4>
-                <div className="space-y-2">
-                  {["1 km", "3 km", "5 km", "10 km"].map((distance) => (
-                    <label key={distance} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="distance"
-                        className="w-4 h-4 border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-muted-foreground font-light">
-                        Within {distance}
                       </span>
                     </label>
                   ))}
@@ -204,58 +191,26 @@ export function Search() {
               <select className="px-4 py-2 bg-card border border-border rounded-lg text-card-foreground font-light focus:outline-none focus:ring-2 focus:ring-primary">
                 <option>Sort by: Recommended</option>
                 <option>Sort by: Rating</option>
-                <option>Sort by: Distance</option>
                 <option>Sort by: Price</option>
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {results.map((barbershop) => (
-                <Link
-                  key={barbershop.id}
-                  to={`/barbershop/${barbershop.id}`}
-                  className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all group"
-                >
-                  {/* Cover Image */}
-                  <div className="relative h-48 overflow-hidden bg-muted">
-                    <ImageWithFallback
-                      src={barbershop.coverImage}
-                      alt={barbershop.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-4 right-4 bg-card px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                      <Star className="w-4 h-4 fill-primary text-primary" />
-                      <span className="font-bold text-card-foreground text-sm">
-                        {barbershop.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <h3 className="font-bold text-xl text-card-foreground mb-2">
-                      {barbershop.name}
-                    </h3>
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                      <MapPin className="w-4 h-4" />
-                      <span className="font-light text-sm">
-                        {barbershop.location} • {barbershop.distance}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-4">
-                      <span className="text-muted-foreground font-light text-sm">
-                        {barbershop.reviewCount} reviews
-                      </span>
-                      <span className="text-primary font-bold">
-                        {barbershop.priceRange}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {results.map((barbershop) => (
+                  <BarbershopCard key={barbershop.id} barbershop={barbershop} />
+                ))}
+              </div>
+            )}
+            {!loading && results.length === 0 && (
+              <div className="text-center py-20 bg-card rounded-xl border border-dashed border-border">
+                <p className="text-muted-foreground">No barbershops found matching your criteria.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

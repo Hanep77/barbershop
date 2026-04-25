@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barbershop;
 use App\Models\ServiceCategory;
 use Illuminate\Http\Request;
 
@@ -10,10 +11,21 @@ class ServiceCategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request, Barbershop $barbershop = null)
     {
         try {
-            $categories = ServiceCategory::all();
+            // Jika $barbershop null atau tidak ada di DB (dari rute resource partner)
+            if (!$barbershop || !$barbershop->exists) {
+                $barbershop = $request->user() ? $request->user()->barbershop : null;
+            }
+
+            if (!$barbershop) {
+                return response()->json([
+                    "message" => "Barbershop not found",
+                ], 404);
+            }
+
+            $categories = ServiceCategory::query()->where("barbershop_id", $barbershop->id)->get();
             $categories->load("services");
             return response()->json([
                 "message" => "Service categories fetched successfully",
