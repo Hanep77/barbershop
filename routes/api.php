@@ -7,9 +7,12 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
+use Illuminate\Http\Request;
 use App\Http\Controllers\RatingController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NotificationController;
 
 Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
@@ -35,11 +38,11 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::post("/bookings", [BookingController::class, "store"]);
     Route::post("/ratings", [RatingController::class, "store"]);
 
-    Route::get("/notifications", [\App\Http\Controllers\NotificationController::class, "index"]);
-    Route::get("/notifications/unread-count", [\App\Http\Controllers\NotificationController::class, "unreadCount"]);
-    Route::post("/notifications/{notification}/read", [\App\Http\Controllers\NotificationController::class, "markAsRead"]);
-    Route::post("/notifications/read-all", [\App\Http\Controllers\NotificationController::class, "markAllAsRead"]);
-    
+    Route::get("/notifications", [NotificationController::class, "index"]);
+    Route::get("/notifications/unread-count", [NotificationController::class, "unreadCount"]);
+    Route::post("/notifications/{notification}/read", [NotificationController::class, "markAsRead"]);
+    Route::post("/notifications/read-all", [NotificationController::class, "markAllAsRead"]);
+
     // Barbershop management
     Route::post("/barbershop", [BarbershopController::class, "store"]);
     Route::put("/barbershop/{barbershop}", [BarbershopController::class, "update"]);
@@ -53,7 +56,7 @@ Route::middleware("auth:sanctum")->group(function () {
             Route::resource('/services', ServiceController::class);
             Route::resource('/service-categories', ServiceCategoryController::class);
             Route::resource('/capsters', CapsterController::class);
-            
+
             Route::get('/bookings', [BookingController::class, 'partnerIndex']);
             Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
         });
@@ -61,4 +64,12 @@ Route::middleware("auth:sanctum")->group(function () {
 
     Route::put("/barbershop/services/{service}", [ServiceController::class, "update"]);
     Route::delete("/barbershop/services/{service}", [ServiceController::class, "destroy"]);
+
+    // Bookings
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+
+    // Payments
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
 });
