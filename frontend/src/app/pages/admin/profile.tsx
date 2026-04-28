@@ -78,7 +78,24 @@ export function AdminProfile() {
   };
 
   useEffect(() => {
-    getBarbershopInfo();
+    let isMounted = true;
+
+    const loadBarbershopInfo = async () => {
+      try {
+        const data = await getBarbershop();
+        if (!isMounted) return;
+        const { barbershop, user } = data.data;
+        setProfile({ barbershop, user });
+      } catch (err) {
+        console.error("Error in loadBarbershopInfo:", err);
+      }
+    };
+
+    loadBarbershopInfo();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

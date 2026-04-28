@@ -21,11 +21,27 @@ export default function FindLocation({
   ]);
 
   useEffect(() => {
-    const nextPosition: [number, number] = [latitude, longitude];
-    setPosition(nextPosition);
-    if (mapRef.current) {
-      mapRef.current.setView(nextPosition);
-    }
+    let isMounted = true;
+
+    const updateLocation = () => {
+      try {
+        const nextPosition: [number, number] = [latitude, longitude];
+        if (isMounted) {
+          setPosition(nextPosition);
+          if (mapRef.current) {
+            mapRef.current.setView(nextPosition);
+          }
+        }
+      } catch (err) {
+        console.error("Error in updateLocation:", err);
+      }
+    };
+
+    updateLocation();
+
+    return () => {
+      isMounted = false;
+    };
   }, [latitude, longitude]);
 
   const markerEvents = useMemo(

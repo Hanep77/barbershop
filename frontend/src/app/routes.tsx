@@ -22,6 +22,8 @@ import GuestOnly from "../middleware/GuestOnly";
 import RequireBarbershop from "../middleware/RequireBarbershop";
 import AuthCallback from "./pages/auth-callback";
 import AdminOnly from "../middleware/AdminOnly";
+import CheckoutPage from "./pages/CheckoutPage";
+import PaymentReturnPage from "./pages/PaymentReturnPage";
 
 export const router = createBrowserRouter([
   {
@@ -89,6 +91,8 @@ export const router = createBrowserRouter([
       { path: "ai-consultant", Component: AIConsultant },
       { path: "services", element: <Navigate to="/search" replace /> },
       { path: "barbers", element: <Navigate to="/search" replace /> },
+      { path: "checkout", Component: CheckoutPage },
+      { path: "payment/return", Component: PaymentReturnPage },
       { path: "*", Component: NotFound },
     ],
   },

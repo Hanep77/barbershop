@@ -30,6 +30,7 @@ Route::get("/barbershop/{barbershop}/service-categories", [ServiceCategoryContro
 Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);
 Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class, "getAvailableSlots"]);
 Route::get("/barbershop/{barbershop}/ratings", [RatingController::class, "index"]);
+Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
@@ -53,9 +54,16 @@ Route::middleware("auth:sanctum")->group(function () {
         Route::prefix("/barbershop")->group(function () {
             Route::get('/', [PartnerBarbershopController::class, 'index']);
             Route::put('/', [PartnerBarbershopController::class, 'update']);
+
+            // Dashboard routes
+            Route::get('/dashboard/stats', [PartnerBarbershopController::class, 'dashboardStats']);
+            Route::get('/dashboard/today-appointments', [PartnerBarbershopController::class, 'todayAppointments']);
+            Route::get('/dashboard/recent-bookings', [PartnerBarbershopController::class, 'recentBookings']);
+
             Route::resource('/services', ServiceController::class);
             Route::resource('/service-categories', ServiceCategoryController::class);
             Route::resource('/capsters', CapsterController::class);
+            Route::post('/capsters/{capster}/toggle-status', [CapsterController::class, 'toggleStatus']);
 
             Route::get('/bookings', [BookingController::class, 'partnerIndex']);
             Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
@@ -70,6 +78,9 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
 
     // Payments
-    Route::get('/payments/{id}', [PaymentController::class, 'show']);
-    Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
+    Route::get('/payments/detail/{id}', [PaymentController::class, 'show']);
+    Route::get('/payments/{bookingId}', [PaymentController::class, 'getByBooking']);
+    Route::post('/payments/create', [PaymentController::class, 'create']);
 });
+
+Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);

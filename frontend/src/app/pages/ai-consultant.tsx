@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, RotateCw, Sparkles, AlertCircle, Info, CheckCircle } from "lucide-react";
+import {
+  Camera,
+  RotateCw,
+  Sparkles,
+  AlertCircle,
+  Info,
+  CheckCircle,
+} from "lucide-react";
 import { AIChatbot } from "../components/ai-chatbot";
 import {
   hairstyleRecommendations,
@@ -7,7 +14,12 @@ import {
   type HairstyleRecommendation,
 } from "../data/marketplace-data";
 
-type ScanStage = "idle" | "camera-ready" | "scanning" | "analyzing" | "complete";
+type ScanStage =
+  | "idle"
+  | "camera-ready"
+  | "scanning"
+  | "analyzing"
+  | "complete";
 type PermissionState = "prompt" | "granted" | "denied" | "unknown";
 
 export function AIConsultant() {
@@ -17,7 +29,8 @@ export function AIConsultant() {
   const [progress, setProgress] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string>("");
-  const [permissionState, setPermissionState] = useState<PermissionState>("unknown");
+  const [permissionState, setPermissionState] =
+    useState<PermissionState>("unknown");
   const [showChatbot, setShowChatbot] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{
     faceShape: FaceShape;
@@ -26,7 +39,39 @@ export function AIConsultant() {
 
   // Check camera permission status on mount
   useEffect(() => {
-    checkCameraPermission();
+    let isMounted = true;
+
+    const loadCameraPermission = async () => {
+      try {
+        // Check if Permissions API is available
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({
+            name: "camera" as PermissionName,
+          });
+          if (!isMounted) return;
+          setPermissionState(result.state as PermissionState);
+
+          // Listen for permission changes
+          result.addEventListener("change", () => {
+            if (isMounted) {
+              setPermissionState(result.state as PermissionState);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error in loadCameraPermission:", err);
+        // Permissions API not supported, will check during camera access
+        if (isMounted) {
+          setPermissionState("unknown");
+        }
+      }
+    };
+
+    loadCameraPermission();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Cleanup camera stream
@@ -38,31 +83,17 @@ export function AIConsultant() {
     };
   }, [stream]);
 
-  const checkCameraPermission = async () => {
-    try {
-      // Check if Permissions API is available
-      if (navigator.permissions && navigator.permissions.query) {
-        const result = await navigator.permissions.query({ name: "camera" as PermissionName });
-        setPermissionState(result.state as PermissionState);
-        
-        // Listen for permission changes
-        result.addEventListener("change", () => {
-          setPermissionState(result.state as PermissionState);
-        });
-      }
-    } catch (err) {
-      // Permissions API not supported, will check during camera access
-      setPermissionState("unknown");
-    }
-  };
-
   const startCamera = async () => {
     try {
       setError("");
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         setStream(mediaStream);
@@ -72,14 +103,23 @@ export function AIConsultant() {
     } catch (err) {
       const error = err as Error;
       console.error("Camera error:", error);
-      
+
       // Provide specific error messages based on error type
-      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+      if (
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError"
+      ) {
         setError("permission-denied");
         setPermissionState("denied");
-      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      } else if (
+        error.name === "NotFoundError" ||
+        error.name === "DevicesNotFoundError"
+      ) {
         setError("no-camera");
-      } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      } else if (
+        error.name === "NotReadableError" ||
+        error.name === "TrackStartError"
+      ) {
         setError("camera-in-use");
       } else {
         setError("generic");
@@ -119,12 +159,20 @@ export function AIConsultant() {
     // Simulate AI analysis with delay
     setTimeout(() => {
       // Randomly select a face shape for demo
-      const faceShapes: FaceShape[] = ["oval", "square", "round", "heart", "diamond", "oblong"];
-      const randomShape = faceShapes[Math.floor(Math.random() * faceShapes.length)];
-      
+      const faceShapes: FaceShape[] = [
+        "oval",
+        "square",
+        "round",
+        "heart",
+        "diamond",
+        "oblong",
+      ];
+      const randomShape =
+        faceShapes[Math.floor(Math.random() * faceShapes.length)];
+
       // Get recommendations for this face shape
       const recommendations = hairstyleRecommendations.filter((style) =>
-        style.faceShapes.includes(randomShape)
+        style.faceShapes.includes(randomShape),
       );
 
       setAnalysisResult({
@@ -133,7 +181,7 @@ export function AIConsultant() {
       });
 
       setStage("complete");
-      
+
       // Show chatbot after brief delay
       setTimeout(() => {
         stopCamera();
@@ -153,10 +201,12 @@ export function AIConsultant() {
 
   // Draw face mesh overlay
   useEffect(() => {
+    let isMounted = true;
+
     if (stage === "scanning" || stage === "analyzing") {
       const canvas = canvasRef.current;
       const video = videoRef.current;
-      
+
       if (!canvas || !video) return;
 
       const ctx = canvas.getContext("2d");
@@ -193,7 +243,7 @@ export function AIConsultant() {
         ];
 
         points.forEach((point, index) => {
-          const phase = (progress / 100) * Math.PI * 2 + (index * Math.PI / 4);
+          const phase = (progress / 100) * Math.PI * 2 + (index * Math.PI) / 4;
           const pulse = Math.sin(phase) * 0.5 + 0.5;
           const radius = 4 + pulse * 3;
 
@@ -214,14 +264,22 @@ export function AIConsultant() {
       };
 
       const animationFrame = requestAnimationFrame(function animate() {
-        drawOverlay();
-        if (stage === "scanning" || stage === "analyzing") {
-          requestAnimationFrame(animate);
+        if (isMounted) {
+          drawOverlay();
+          if (stage === "scanning" || stage === "analyzing") {
+            requestAnimationFrame(animate);
+          }
         }
       });
 
-      return () => cancelAnimationFrame(animationFrame);
+      return () => {
+        cancelAnimationFrame(animationFrame);
+      };
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [stage, progress]);
 
   return (
@@ -236,7 +294,8 @@ export function AIConsultant() {
             AI Visual Consultant
           </h1>
           <p className="text-muted-foreground font-light text-lg leading-relaxed max-w-2xl mx-auto">
-            Let our AI analyze your facial structure to recommend the perfect hairstyles tailored just for you
+            Let our AI analyze your facial structure to recommend the perfect
+            hairstyles tailored just for you
           </p>
         </div>
 
@@ -253,26 +312,32 @@ export function AIConsultant() {
                   Ready to Get Started?
                 </h2>
                 <p className="text-muted-foreground font-light mb-8 max-w-md leading-relaxed">
-                  Position your face in the frame. Our AI will analyze your facial structure to recommend personalized hairstyles.
+                  Position your face in the frame. Our AI will analyze your
+                  facial structure to recommend personalized hairstyles.
                 </p>
-                
+
                 {/* Permission Status Indicator */}
-                {permissionState !== "unknown" && permissionState !== "denied" && (
-                  <div className="mb-4 flex items-center gap-2 text-sm">
-                    {permissionState === "granted" && (
-                      <>
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-muted-foreground font-light">Camera access granted</span>
-                      </>
-                    )}
-                    {permissionState === "prompt" && (
-                      <>
-                        <Info className="w-4 h-4 text-primary" />
-                        <span className="text-muted-foreground font-light">You'll be asked for camera permission</span>
-                      </>
-                    )}
-                  </div>
-                )}
+                {permissionState !== "unknown" &&
+                  permissionState !== "denied" && (
+                    <div className="mb-4 flex items-center gap-2 text-sm">
+                      {permissionState === "granted" && (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-muted-foreground font-light">
+                            Camera access granted
+                          </span>
+                        </>
+                      )}
+                      {permissionState === "prompt" && (
+                        <>
+                          <Info className="w-4 h-4 text-primary" />
+                          <span className="text-muted-foreground font-light">
+                            You'll be asked for camera permission
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                 <button
                   onClick={startCamera}
@@ -289,22 +354,23 @@ export function AIConsultant() {
                         <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <h4 className="font-bold text-destructive mb-2">
-                            {error === "permission-denied" && "Camera Permission Denied"}
+                            {error === "permission-denied" &&
+                              "Camera Permission Denied"}
                             {error === "no-camera" && "No Camera Found"}
                             {error === "camera-in-use" && "Camera In Use"}
                             {error === "generic" && "Camera Access Error"}
                           </h4>
                           <p className="text-sm text-destructive/90 font-light mb-3 leading-relaxed">
-                            {error === "permission-denied" && 
+                            {error === "permission-denied" &&
                               "You've blocked camera access for this website. To use the AI face scanner, you need to grant camera permissions."}
-                            {error === "no-camera" && 
+                            {error === "no-camera" &&
                               "We couldn't detect a camera on your device. Please make sure a camera is connected and try again."}
-                            {error === "camera-in-use" && 
+                            {error === "camera-in-use" &&
                               "Your camera is currently being used by another application. Please close other apps using the camera."}
-                            {error === "generic" && 
+                            {error === "generic" &&
                               "We're having trouble accessing your camera. Please check your browser settings and try again."}
                           </p>
-                          
+
                           {error === "permission-denied" && (
                             <div className="bg-card rounded-lg p-3 border border-border">
                               <h5 className="font-bold text-card-foreground text-xs mb-2 flex items-center gap-2">
@@ -312,17 +378,43 @@ export function AIConsultant() {
                                 How to Fix This:
                               </h5>
                               <ol className="text-xs text-muted-foreground font-light space-y-1.5 list-decimal list-inside leading-relaxed">
-                                <li>Look for the camera icon in your browser's address bar</li>
-                                <li>Click the icon and select "Allow" or "Always allow"</li>
-                                <li>Refresh this page and click "Enable Camera" again</li>
-                                <li>If still blocked, check your browser settings under Privacy & Security</li>
+                                <li>
+                                  Look for the camera icon in your browser's
+                                  address bar
+                                </li>
+                                <li>
+                                  Click the icon and select "Allow" or "Always
+                                  allow"
+                                </li>
+                                <li>
+                                  Refresh this page and click "Enable Camera"
+                                  again
+                                </li>
+                                <li>
+                                  If still blocked, check your browser settings
+                                  under Privacy & Security
+                                </li>
                               </ol>
                               <div className="mt-3 pt-3 border-t border-border">
                                 <p className="text-xs text-muted-foreground font-light">
-                                  <span className="font-bold">Browser Shortcuts:</span><br />
-                                  <span className="text-primary">Chrome/Edge:</span> Settings → Privacy → Camera<br />
-                                  <span className="text-primary">Firefox:</span> Preferences → Privacy → Permissions<br />
-                                  <span className="text-primary">Safari:</span> Preferences → Websites → Camera
+                                  <span className="font-bold">
+                                    Browser Shortcuts:
+                                  </span>
+                                  <br />
+                                  <span className="text-primary">
+                                    Chrome/Edge:
+                                  </span>{" "}
+                                  Settings → Privacy → Camera
+                                  <br />
+                                  <span className="text-primary">
+                                    Firefox:
+                                  </span>{" "}
+                                  Preferences → Privacy → Permissions
+                                  <br />
+                                  <span className="text-primary">
+                                    Safari:
+                                  </span>{" "}
+                                  Preferences → Websites → Camera
                                 </p>
                               </div>
                             </div>
@@ -335,10 +427,21 @@ export function AIConsultant() {
                                 Troubleshooting Steps:
                               </h5>
                               <ul className="text-xs text-muted-foreground font-light space-y-1.5 list-disc list-inside leading-relaxed">
-                                <li>Close other tabs or apps using your camera (Zoom, Teams, etc.)</li>
-                                <li>Make sure no other browser windows are accessing the camera</li>
-                                <li>Restart your browser if the issue persists</li>
-                                <li>Check if another app has exclusive camera access</li>
+                                <li>
+                                  Close other tabs or apps using your camera
+                                  (Zoom, Teams, etc.)
+                                </li>
+                                <li>
+                                  Make sure no other browser windows are
+                                  accessing the camera
+                                </li>
+                                <li>
+                                  Restart your browser if the issue persists
+                                </li>
+                                <li>
+                                  Check if another app has exclusive camera
+                                  access
+                                </li>
                               </ul>
                             </div>
                           )}
@@ -350,9 +453,17 @@ export function AIConsultant() {
                                 Possible Solutions:
                               </h5>
                               <ul className="text-xs text-muted-foreground font-light space-y-1.5 list-disc list-inside leading-relaxed">
-                                <li>Check if your webcam is properly connected</li>
-                                <li>Try using a different USB port (for external cameras)</li>
-                                <li>Enable camera in Device Manager (Windows) or System Preferences (Mac)</li>
+                                <li>
+                                  Check if your webcam is properly connected
+                                </li>
+                                <li>
+                                  Try using a different USB port (for external
+                                  cameras)
+                                </li>
+                                <li>
+                                  Enable camera in Device Manager (Windows) or
+                                  System Preferences (Mac)
+                                </li>
                                 <li>Make sure camera drivers are up to date</li>
                               </ul>
                             </div>
@@ -391,7 +502,9 @@ export function AIConsultant() {
             <canvas
               ref={canvasRef}
               className={`absolute inset-0 w-full h-full ${
-                stage === "scanning" || stage === "analyzing" ? "block" : "hidden"
+                stage === "scanning" || stage === "analyzing"
+                  ? "block"
+                  : "hidden"
               }`}
             />
 
@@ -401,9 +514,13 @@ export function AIConsultant() {
                 <div className="w-full max-w-md">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-primary font-bold">
-                      {stage === "scanning" ? "Scanning Face..." : "Analyzing Structure..."}
+                      {stage === "scanning"
+                        ? "Scanning Face..."
+                        : "Analyzing Structure..."}
                     </span>
-                    <span className="text-primary font-bold">{Math.round(progress)}%</span>
+                    <span className="text-primary font-bold">
+                      {Math.round(progress)}%
+                    </span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                     <div
@@ -425,7 +542,10 @@ export function AIConsultant() {
                   Analysis Complete!
                 </h2>
                 <p className="text-muted-foreground font-light text-lg mb-2">
-                  Face Shape: <span className="text-primary font-bold capitalize">{analysisResult.faceShape}</span>
+                  Face Shape:{" "}
+                  <span className="text-primary font-bold capitalize">
+                    {analysisResult.faceShape}
+                  </span>
                 </p>
                 <p className="text-muted-foreground font-light">
                   Opening your personalized recommendations...
@@ -454,7 +574,8 @@ export function AIConsultant() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground text-center mt-4 font-light">
-                Make sure your face is well-lit and centered in the frame for best results
+                Make sure your face is well-lit and centered in the frame for
+                best results
               </p>
             </div>
           )}
@@ -496,10 +617,13 @@ export function AIConsultant() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="font-bold text-foreground mb-1">Privacy & Security</h4>
+              <h4 className="font-bold text-foreground mb-1">
+                Privacy & Security
+              </h4>
               <p className="text-muted-foreground font-light text-sm leading-relaxed">
-                Your photos are processed locally in your browser and are never stored or uploaded to our servers. 
-                All analysis happens in real-time on your device.
+                Your photos are processed locally in your browser and are never
+                stored or uploaded to our servers. All analysis happens in
+                real-time on your device.
               </p>
             </div>
           </div>

@@ -29,19 +29,45 @@ export function Layout() {
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    let isMounted = true;
+
+    const updateScrolling = () => {
+      try {
+        if (isMounted) {
+          if (mobileMenuOpen) {
+            document.body.style.overflow = "hidden";
+          } else {
+            document.body.style.overflow = "unset";
+          }
+        }
+      } catch (err) {
+        console.error("Error in updateScrolling:", err);
+      }
+    };
+
+    updateScrolling();
+
     return () => {
+      isMounted = false;
       document.body.style.overflow = "unset";
     };
   }, [mobileMenuOpen]);
 
   // Close mobile menu on route change
   useEffect(() => {
-    setMobileMenuOpen(false);
+    let isMounted = true;
+
+    const closeMobileMenu = () => {
+      if (isMounted) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    closeMobileMenu();
+
+    return () => {
+      isMounted = false;
+    };
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -57,11 +83,11 @@ export function Layout() {
 
   const initials = user?.name
     ? user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "";
 
   const isActive = (path: string) => {
@@ -72,7 +98,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-[60]">
+      <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-[30]">
         <div className="container mx-auto px-6 py-5">
           <div className="flex items-center">
             {/* Logo Container */}
@@ -95,10 +121,11 @@ export function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2 transition-colors ${isActive(item.path)
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                      }`}
+                    className={`flex items-center gap-2 transition-colors ${
+                      isActive(item.path)
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-normal text-sm">{item.label}</span>
@@ -226,10 +253,11 @@ export function Layout() {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50"
-                        }`}
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50"
+                      }`}
                     >
                       <Icon
                         className={`w-6 h-6 ${active ? "text-primary" : "text-muted-foreground"}`}
@@ -240,10 +268,11 @@ export function Layout() {
                 })}
                 <Link
                   to="/my-bookings"
-                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/my-bookings")
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted/50"
-                    }`}
+                  className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
+                    isActive("/my-bookings")
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
                 >
                   <Calendar
                     className={`w-6 h-6 ${isActive("/my-bookings") ? "text-primary" : "text-muted-foreground"}`}
@@ -263,10 +292,11 @@ export function Layout() {
                   {user.role === "barbershop" && (
                     <Link
                       to="/admin/dashboard"
-                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${isActive("/admin/dashboard")
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/50"
-                        }`}
+                      className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-all ${
+                        isActive("/admin/dashboard")
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/50"
+                      }`}
                     >
                       <LayoutDashboard
                         className={`w-6 h-6 ${isActive("/admin/dashboard") ? "text-primary" : "text-muted-foreground"}`}

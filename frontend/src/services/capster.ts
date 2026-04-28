@@ -29,5 +29,11 @@ export const adminDeleteCapster = async (id: string) => {
 };
 
 export const getCapstersByBarbershopId = async (id: string) => {
+  await getCsrf();
   return await api.get(`/api/barbershop/${id}/capsters`);
+};
+
+export const adminToggleCapsterStatus = async (id: string) => {
+  await getCsrf();
+  return await api.post(`/api/partner/barbershop/capsters/${id}/toggle-status`);
 };

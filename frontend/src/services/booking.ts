@@ -9,6 +9,10 @@ export const getUserBookings = () => {
   return api.get<{ data: Booking[] }>("/api/bookings");
 };
 
+export const getBookingById = (bookingId: string) => {
+  return api.get<Booking>(`/api/bookings/${bookingId}`);
+};
+
 export const getAvailableSlots = (barbershopId: string, params: { date: string, service_id: string, capster_id: string }) => {
   return api.get<{ slots: string[] }>(`/api/barbershop/${barbershopId}/available-slots`, { params });
 };
