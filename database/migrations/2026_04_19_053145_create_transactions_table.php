@@ -19,13 +19,13 @@ return new class extends Migration
             $table->decimal('total_price', 8, 2);
             $table->foreignUuid('service_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('capster_id')->constrained()->onDelete('cascade');
-            $table->time('start_time')->after('booking_date');
-            $table->time('end_time')->after('start_time');
-            $table->text('cancellation_reason')->nullable()->after('status');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->text('cancellation_reason')->nullable();
             $table->decimal('refund_amount', 8, 2)->default(0);
             $table->decimal('amount', 8, 2);
-            $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
             $table->string("payment_method");
+            $table->boolean("is_rated")->default(false);
             $table->timestamps();
         });
     }

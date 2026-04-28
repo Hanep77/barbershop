@@ -1,5 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router";
-import { MapPin, Phone, Mail, Clock, Star, ArrowLeft, Loader2 } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Star,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getBarbershopById } from "../../services/barbershop";
@@ -16,7 +24,9 @@ import type { Rating } from "../../types/rating";
 export function BarbershopDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"services" | "capsters" | "reviews">("services");
+  const [activeTab, setActiveTab] = useState<
+    "services" | "capsters" | "reviews"
+  >("services");
   const [barbershop, setBarbershop] = useState<Barbershop | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
@@ -26,17 +36,26 @@ export function BarbershopDetail() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       if (!id) return;
-      setLoading(true);
+
       try {
-        const [shopRes, servicesRes, capstersRes, categoriesRes, ratingsRes] = await Promise.all([
-          getBarbershopById(id),
-          getServicesByBarbershopId(id),
-          getCapstersByBarbershopId(id),
-          getServiceCategoriesByBarbershop(id),
-          getBarbershopRatings(id)
-        ]);
+        if (isMounted) {
+          setLoading(true);
+        }
+
+        const [shopRes, servicesRes, capstersRes, categoriesRes, ratingsRes] =
+          await Promise.all([
+            getBarbershopById(id),
+            getServicesByBarbershopId(id),
+            getCapstersByBarbershopId(id),
+            getServiceCategoriesByBarbershop(id),
+            getBarbershopRatings(id),
+          ]);
+
+        if (!isMounted) return;
 
         const shopData: Barbershop = shopRes.data.data || shopRes.data;
         setBarbershop(shopData);
@@ -44,7 +63,10 @@ export function BarbershopDetail() {
         const sData = servicesRes.data.data || servicesRes.data;
         setServices(Array.isArray(sData) ? sData : []);
 
-        const cData = capstersRes.data.data || capstersRes.data.capsters || capstersRes.data;
+        const cData =
+          capstersRes.data.data ||
+          capstersRes.data.capsters ||
+          capstersRes.data;
         setCapsters(Array.isArray(cData) ? cData : []);
 
         const catData = categoriesRes.data.categories || categoriesRes.data;
@@ -52,16 +74,23 @@ export function BarbershopDetail() {
 
         const rData = ratingsRes.data.data || ratingsRes.data;
         setRatings(Array.isArray(rData) ? rData : []);
-
       } catch (err) {
-        console.error("Error fetching barbershop details:", err);
-        setError("Failed to load barbershop details.");
+        console.error("Error in fetchData:", err);
+        if (isMounted) {
+          setError("Failed to load barbershop details.");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   if (loading) {
@@ -79,10 +108,7 @@ export function BarbershopDetail() {
           <h2 className="font-bold text-2xl text-foreground mb-4">
             {error || "Barbershop Not Found"}
           </h2>
-          <Link
-            to="/"
-            className="text-primary hover:text-primary/80 font-bold"
-          >
+          <Link to="/" className="text-primary hover:text-primary/80 font-bold">
             ← Back to Home
           </Link>
         </div>
@@ -90,9 +116,12 @@ export function BarbershopDetail() {
     );
   }
 
-  const averageRating = ratings.length > 0 
-    ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
-    : "New";
+  const averageRating =
+    ratings.length > 0
+      ? (
+          ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length
+        ).toFixed(1)
+      : "New";
 
   // Helper to format currency
   const formatPrice = (price: number) => {
@@ -150,9 +179,7 @@ export function BarbershopDetail() {
                           ({ratings.length} reviews)
                         </span>
                       </div>
-                      <span className="text-primary font-bold text-lg">
-                        $$
-                      </span>
+                      <span className="text-primary font-bold text-lg">$$</span>
                     </div>
                   </div>
                 </div>
@@ -166,7 +193,9 @@ export function BarbershopDetail() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-bold text-card-foreground mb-1">Address</p>
+                      <p className="font-bold text-card-foreground mb-1">
+                        Address
+                      </p>
                       <p className="text-muted-foreground font-light text-sm">
                         {barbershop.address}
                       </p>
@@ -176,7 +205,9 @@ export function BarbershopDetail() {
                   <div className="flex items-start gap-3">
                     <Clock className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-bold text-card-foreground mb-1">Hours</p>
+                      <p className="font-bold text-card-foreground mb-1">
+                        Hours
+                      </p>
                       <p className="text-muted-foreground font-light text-sm">
                         Mon - Fri: 9:00 AM - 8:00 PM
                       </p>
@@ -189,7 +220,9 @@ export function BarbershopDetail() {
                   <div className="flex items-start gap-3">
                     <Phone className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-bold text-card-foreground mb-1">Phone</p>
+                      <p className="font-bold text-card-foreground mb-1">
+                        Phone
+                      </p>
                       <a
                         href={`tel:${barbershop.phone_number}`}
                         className="text-muted-foreground font-light text-sm hover:text-primary transition-colors"
@@ -226,10 +259,11 @@ export function BarbershopDetail() {
         <div className="flex gap-4 border-b border-border mb-8">
           <button
             onClick={() => setActiveTab("services")}
-            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "services"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-6 py-3 font-bold transition-colors relative ${
+              activeTab === "services"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Services
             {activeTab === "services" && (
@@ -238,10 +272,11 @@ export function BarbershopDetail() {
           </button>
           <button
             onClick={() => setActiveTab("capsters")}
-            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "capsters"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-6 py-3 font-bold transition-colors relative ${
+              activeTab === "capsters"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Barbers
             {activeTab === "capsters" && (
@@ -250,10 +285,11 @@ export function BarbershopDetail() {
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`px-6 py-3 font-bold transition-colors relative ${activeTab === "reviews"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-              }`}
+            className={`px-6 py-3 font-bold transition-colors relative ${
+              activeTab === "reviews"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             Reviews
             {activeTab === "reviews" && (
@@ -267,37 +303,38 @@ export function BarbershopDetail() {
           <div className="space-y-12">
             {categories.map((category) => (
               <div key={category.id}>
-                <h2 className="text-2xl font-bold mb-6 text-card-foreground border-l-4 border-primary pl-4">
+                <h2 className="text-2xl font-bold mb-6 text-foreground border-l-4 border-primary pl-4">
                   {category.name}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {category.services && category.services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col"
-                    >
-                      <h3 className="font-bold text-xl text-card-foreground mb-2">
-                        {service.name}
-                      </h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="font-bold text-2xl text-primary">
-                          {formatPrice(service.price)}
-                        </span>
-                        <span className="text-muted-foreground font-light text-sm">
-                          {service.duration_minutes} min
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
-                        {service.description}
-                      </p>
-                      <Link
-                        to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
-                        className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                  {category.services &&
+                    category.services.map((service) => (
+                      <div
+                        key={service.id}
+                        className="bg-card rounded-xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col"
                       >
-                        Book Now
-                      </Link>
-                    </div>
-                  ))}
+                        <h3 className="font-bold text-xl text-card-foreground mb-2">
+                          {service.name}
+                        </h3>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="font-bold text-2xl text-primary">
+                            {formatPrice(service.price)}
+                          </span>
+                          <span className="text-muted-foreground font-light text-sm">
+                            {service.duration_minutes} min
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
+                          {service.description}
+                        </p>
+                        <Link
+                          to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
+                          className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                        >
+                          Book Now
+                        </Link>
+                      </div>
+                    ))}
                 </div>
               </div>
             ))}
@@ -324,7 +361,9 @@ export function BarbershopDetail() {
                   <h3 className="font-bold text-xl text-card-foreground mb-1">
                     {capster.name}
                   </h3>
-                  <p className="text-primary font-normal mb-1">{capster.title}</p>
+                  <p className="text-primary font-normal mb-1">
+                    {capster.title}
+                  </p>
                   <p className="text-muted-foreground font-light leading-relaxed mb-4">
                     {capster.bio}
                   </p>
@@ -351,18 +390,23 @@ export function BarbershopDetail() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      {review.user?.name ? review.user.name[0].toUpperCase() : "U"}
+                      {review.user?.name
+                        ? review.user.name[0].toUpperCase()
+                        : "U"}
                     </div>
                     <div>
                       <h4 className="font-bold text-card-foreground mb-1">
                         {review.user?.name || "Anonymous User"}
                       </h4>
                       <p className="text-muted-foreground font-light text-sm">
-                        {new Date(review.created_at).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric"
-                        })}
+                        {new Date(review.created_at).toLocaleDateString(
+                          "id-ID",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -370,10 +414,11 @@ export function BarbershopDetail() {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${i < review.rating
-                          ? "fill-primary text-primary"
-                          : "text-muted-foreground"
-                          }`}
+                        className={`w-4 h-4 ${
+                          i < review.rating
+                            ? "fill-primary text-primary"
+                            : "text-muted-foreground"
+                        }`}
                       />
                     ))}
                   </div>
@@ -386,7 +431,9 @@ export function BarbershopDetail() {
             {ratings.length === 0 && (
               <div className="text-center py-12">
                 <Star className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+                <p className="text-muted-foreground">
+                  No reviews yet. Be the first to review!
+                </p>
               </div>
             )}
           </div>

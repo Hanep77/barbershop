@@ -126,9 +126,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <NotificationBell />
           <UserMenu />
         </header>
-        <div className="flex-1">
-          {children || <Outlet />}
-        </div>
+        <div className="flex-1">{children || <Outlet />}</div>
       </main>
     </div>
   );

@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class XenditService
 {
-    protected $client;
     protected $apiKey;
     protected $baseUrl;
 
@@ -16,23 +15,18 @@ class XenditService
     {
         $this->apiKey = config('services.xendit.api_key');
         $this->baseUrl = config('services.xendit.base_url', 'https://api.xendit.co');
-        $this->client = new Client([
-            'base_uri' => $this->baseUrl,
-            'headers' => [
-                'Authorization' => 'Basic ' . base64_encode($this->apiKey . ':'),
-                'Content-Type' => 'application/json',
-            ],
-        ]);
     }
 
     public function createInvoice(array $data)
     {
         try {
-            $response = $this->client->post('/v2/invoices', [
-                'json' => $data,
-            ]);
+            $body = Http::withBasicAuth($this->apiKey, '')
+                ->acceptJson()
+                ->asJson()
+                ->post($this->baseUrl . '/v2/invoices', $data)
+                ->throw()
+                ->json();
 
-            $body = json_decode($response->getBody(), true);
             Log::info('Xendit Invoice Created', ['invoice_id' => $body['id'] ?? null, 'data' => $data]);
 
             return $body;
@@ -45,9 +39,12 @@ class XenditService
         }
     }
 
-    public function verifyWebhookSignature($payload, $signature, $webhookToken)
+    public function verifyWebhookToken(?string $callbackToken, ?string $webhookToken): bool
     {
-        $expectedSignature = hash_hmac('sha256', $payload, $webhookToken);
-        return hash_equals($expectedSignature, $signature);
+        if (!$callbackToken || !$webhookToken) {
+            return false;
+        }
+
+        return hash_equals($webhookToken, $callbackToken);
     }
 }

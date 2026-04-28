@@ -204,8 +204,44 @@ export function AdminServices() {
   };
 
   useEffect(() => {
-    fetchServices();
-    fetchServiceCategories();
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        // Fetch services
+        const servicesRes = await adminGetBarbershopServices();
+        if (!isMounted) return;
+        const { data } = servicesRes;
+        setServices(data || []);
+
+        // Fetch categories
+        const categoriesRes = await adminGetServiceCategories();
+        if (!isMounted) return;
+        const { categories } = categoriesRes.data;
+        setHairStyleCategories(categories || []);
+      } catch (error: unknown) {
+        console.error("Error in loadData:", error);
+        if (error instanceof AxiosError) {
+          if (isMounted) {
+            toast.error(
+              error.response?.data?.message || "Failed to fetch data",
+            );
+            console.log(error.response);
+          }
+          return;
+        }
+        if (isMounted) {
+          toast.error("Failed to fetch data");
+        }
+        console.log(error);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

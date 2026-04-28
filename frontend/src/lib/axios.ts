@@ -1,5 +1,4 @@
 import axios, { type AxiosError, type AxiosInstance } from "axios";
-import { logout } from "../services/auth";
 import useAuthStore from "../store/authStore";
 
 const api: AxiosInstance = axios.create({

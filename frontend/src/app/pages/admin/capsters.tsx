@@ -35,6 +35,7 @@ import {
   adminUpdateCapster,
   adminDeleteCapster,
   adminCreateCapster,
+  adminToggleCapsterStatus,
 } from "../../../services/capster";
 import type { CapsterCreateRequest } from "../../../types/capster";
 import { AxiosError } from "axios";
@@ -47,19 +48,35 @@ export function AdminCapsters() {
   const [specialtiesInput, setSpecialtiesInput] = useState("");
 
   const handleToggleAvailability = async (id: string) => {
-    setBarbers(
-      barbers.map((barber) =>
-        barber.id === id
-          ? { ...barber, is_available: !barber.is_available }
-          : barber,
-      ),
-    );
-    const barber = barbers.find((b) => b.id === id);
-    if (barber) {
-      toast.success(
-        `${barber.name} is now ${!barber.is_available ? "available" : "unavailable"}`,
-      );
-    }
+    await adminToggleCapsterStatus(id)
+      .then((res) => {
+        setBarbers(
+          barbers.map((barber) =>
+            barber.id === id
+              ? { ...barber, is_available: !barber.is_available }
+              : barber,
+          ),
+        );
+        const barber = barbers.find((b) => b.id === id);
+        if (barber) {
+          toast.success(
+            `${barber.name} is now ${!barber.is_available ? "available" : "unavailable"}`,
+          );
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof AxiosError) {
+          toast.error(
+            err.response?.data?.message || "Failed to toggle capster status",
+          );
+          console.log(err.response);
+          return;
+        }
+        toast.error(
+          "An unexpected error occurred while toggling capster status",
+        );
+        console.error(err);
+      });
   };
 
   const handleOpenDialog = (barber?: Barber) => {
@@ -177,7 +194,38 @@ export function AdminCapsters() {
   };
 
   useEffect(() => {
-    fetchBarbers();
+    let isMounted = true;
+
+    const loadCapsters = async () => {
+      try {
+        const res = await adminGetCapsters();
+        if (!isMounted) return;
+        const { capsters } = res.data;
+        setBarbers(capsters);
+        console.log(capsters);
+      } catch (err: unknown) {
+        console.error("Error in loadCapsters:", err);
+        if (err instanceof AxiosError) {
+          if (isMounted) {
+            toast.error(
+              err.response?.data?.message || "Failed to fetch capsters",
+            );
+            console.log(err.response);
+          }
+          return;
+        }
+        if (isMounted) {
+          toast.error("An unexpected error occurred while fetching capsters");
+        }
+        console.error(err);
+      }
+    };
+
+    loadCapsters();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -228,10 +276,11 @@ export function AdminCapsters() {
             <Card key={barber.id} className="bg-card overflow-hidden">
               {/* Availability Banner */}
               <div
-                className={`px-4 py-2 flex items-center justify-between ${barber.is_available
+                className={`px-4 py-2 flex items-center justify-between ${
+                  barber.is_available
                     ? "bg-green-500/10 border-b border-green-500/20"
                     : "bg-red-500/10 border-b border-red-500/20"
-                  }`}
+                }`}
               >
                 <div className="flex items-center gap-2">
                   {barber.is_available ? (
@@ -240,8 +289,9 @@ export function AdminCapsters() {
                     <XCircle className="w-4 h-4 text-red-500" />
                   )}
                   <span
-                    className={`text-xs ${barber.is_available ? "text-green-500" : "text-red-500"
-                      }`}
+                    className={`text-xs ${
+                      barber.is_available ? "text-green-500" : "text-red-500"
+                    }`}
                   >
                     {barber.is_available ? "Available" : "Unavailable"}
                   </span>
@@ -294,8 +344,8 @@ export function AdminCapsters() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {barber.specialties?.map(
-                    (specialty, index) => (
+                  {barber.specialties.length < 1 &&
+                    barber?.specialties?.map((specialty, index) => (
                       <Badge
                         key={index}
                         variant="outline"
@@ -303,8 +353,7 @@ export function AdminCapsters() {
                       >
                         {specialty}
                       </Badge>
-                    ),
-                  )}
+                    ))}
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-border">

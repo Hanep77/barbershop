@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router";
-import type { HairstyleRecommendation, FaceShape } from "../data/marketplace-data";
+import type {
+  HairstyleRecommendation,
+  FaceShape,
+} from "../data/marketplace-data";
 import { faceShapeDescriptions } from "../data/marketplace-data";
 
 interface Message {
@@ -19,7 +22,11 @@ interface AIChatbotProps {
   onClose: () => void;
 }
 
-export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProps) {
+export function AIChatbot({
+  faceShape,
+  recommendations,
+  onClose,
+}: AIChatbotProps) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -35,60 +42,85 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
   }, [messages]);
 
   useEffect(() => {
-    // Initial greeting message
-    const greetingDelay = setTimeout(() => {
-      setMessages([
-        {
-          id: 1,
-          type: "ai",
-          content: `Hello! 👋 I've analyzed your facial structure and determined you have a **${faceShape}** face shape.`,
-        },
-      ]);
-    }, 500);
+    let isMounted = true;
 
-    // Face shape description
-    const descriptionDelay = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: 2,
-          type: "ai",
-          content: faceShapeDescriptions[faceShape],
-        },
-      ]);
-    }, 1500);
+    const initializeChat = () => {
+      try {
+        // Initial greeting message
+        const greetingDelay = setTimeout(() => {
+          if (isMounted) {
+            setMessages([
+              {
+                id: 1,
+                type: "ai",
+                content: `Hello! 👋 I've analyzed your facial structure and determined you have a **${faceShape}** face shape.`,
+              },
+            ]);
+          }
+        }, 500);
 
-    // Recommendations
-    const recommendationsDelay = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: 3,
-          type: "ai",
-          content: "Based on your face shape, here are my top hairstyle recommendations perfectly tailored for you:",
-          hairstyleCards: recommendations,
-        },
-      ]);
-    }, 2500);
+        // Face shape description
+        const descriptionDelay = setTimeout(() => {
+          if (isMounted) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: 2,
+                type: "ai",
+                content: faceShapeDescriptions[faceShape],
+              },
+            ]);
+          }
+        }, 1500);
 
-    // Follow-up question
-    const followUpDelay = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: 4,
-          type: "ai",
-          content: "Which styles catch your eye? I can help you find barbershops that specialize in these cuts! 💈",
-          showBarbershopButton: true,
-        },
-      ]);
-    }, 3500);
+        // Recommendations
+        const recommendationsDelay = setTimeout(() => {
+          if (isMounted) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: 3,
+                type: "ai",
+                content:
+                  "Based on your face shape, here are my top hairstyle recommendations perfectly tailored for you:",
+                hairstyleCards: recommendations,
+              },
+            ]);
+          }
+        }, 2500);
+
+        // Follow-up question
+        const followUpDelay = setTimeout(() => {
+          if (isMounted) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: 4,
+                type: "ai",
+                content:
+                  "Which styles catch your eye? I can help you find barbershops that specialize in these cuts! 💈",
+                showBarbershopButton: true,
+              },
+            ]);
+          }
+        }, 3500);
+
+        return () => {
+          clearTimeout(greetingDelay);
+          clearTimeout(descriptionDelay);
+          clearTimeout(recommendationsDelay);
+          clearTimeout(followUpDelay);
+        };
+      } catch (err) {
+        console.error("Error in initializeChat:", err);
+      }
+    };
+
+    const cleanup = initializeChat();
 
     return () => {
-      clearTimeout(greetingDelay);
-      clearTimeout(descriptionDelay);
-      clearTimeout(recommendationsDelay);
-      clearTimeout(followUpDelay);
+      isMounted = false;
+      cleanup?.();
     };
   }, [faceShape, recommendations]);
 
@@ -110,7 +142,8 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
       const aiResponse: Message = {
         id: messages.length + 2,
         type: "ai",
-        content: "Great question! All of these styles would look fantastic on you. I'd recommend starting with the style that best matches your lifestyle and maintenance preferences. Would you like me to find barbershops that specialize in any of these cuts?",
+        content:
+          "Great question! All of these styles would look fantastic on you. I'd recommend starting with the style that best matches your lifestyle and maintenance preferences. Would you like me to find barbershops that specialize in any of these cuts?",
         showBarbershopButton: true,
       };
       setMessages((prev) => [...prev, aiResponse]);
@@ -120,8 +153,9 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
 
   const handleFindBarbershops = (selectedTags?: string[]) => {
     // Get tags from recommendations
-    const tags = selectedTags || recommendations.flatMap((r) => r.tags).slice(0, 3);
-    
+    const tags =
+      selectedTags || recommendations.flatMap((r) => r.tags).slice(0, 3);
+
     // Navigate to search with specialty filter
     const params = new URLSearchParams();
     params.set("specialty", tags[0] || "Classic");
@@ -139,8 +173,12 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-bold text-card-foreground">AI Style Consultant</h2>
-              <p className="text-xs text-muted-foreground font-light">Powered by BarberBrody AI</p>
+              <h2 className="font-bold text-card-foreground">
+                AI Style Consultant
+              </h2>
+              <p className="text-xs text-muted-foreground font-light">
+                Powered by BarberBrody AI
+              </p>
             </div>
           </div>
           <button
@@ -174,7 +212,9 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
                 )}
 
                 {message.type === "user" && (
-                  <p className="font-light leading-relaxed">{message.content}</p>
+                  <p className="font-light leading-relaxed">
+                    {message.content}
+                  </p>
                 )}
 
                 {/* Hairstyle Cards */}
@@ -237,9 +277,18 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
             <div className="flex justify-start">
               <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div
+                    className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  />
+                  <div
+                    className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  />
                 </div>
               </div>
             </div>
@@ -268,7 +317,8 @@ export function AIChatbot({ faceShape, recommendations, onClose }: AIChatbotProp
             </button>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2 font-light">
-            AI recommendations are suggestions. Consult your barber for personalized advice.
+            AI recommendations are suggestions. Consult your barber for
+            personalized advice.
           </p>
         </div>
       </div>

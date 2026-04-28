@@ -73,8 +73,8 @@ export function AdminServiceCategory() {
         handleCloseDialog();
         setCategories((prev) =>
           (prev || []).map((item) =>
-            item?.id === editingCategory.id ? category : item
-          )
+            item?.id === editingCategory.id ? category : item,
+          ),
         );
       })
       .catch((err: unknown) => {
@@ -113,7 +113,7 @@ export function AdminServiceCategory() {
         if (error instanceof AxiosError) {
           toast.error(
             error.response?.data?.message ||
-            "Failed to fetch service categories",
+              "Failed to fetch service categories",
           );
           return;
         }
@@ -144,7 +144,37 @@ export function AdminServiceCategory() {
   };
 
   useEffect(() => {
-    fetchCategories();
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      try {
+        const res = await adminGetServiceCategories();
+        if (!isMounted) return;
+        const { categories } = res.data;
+        console.log(categories);
+        setCategories(categories);
+      } catch (error: unknown) {
+        console.error("Error in loadCategories:", error);
+        if (error instanceof AxiosError) {
+          if (isMounted) {
+            toast.error(
+              error.response?.data?.message ||
+                "Failed to fetch service categories",
+            );
+          }
+          return;
+        }
+        if (isMounted) {
+          toast.error("Failed to fetch service categories");
+        }
+      }
+    };
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

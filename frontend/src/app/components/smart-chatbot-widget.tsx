@@ -20,7 +20,11 @@ interface SmartChatbotWidgetProps {
   };
 }
 
-export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWidgetProps) {
+export function SmartChatbotWidget({
+  isOpen,
+  onClose,
+  context,
+}: SmartChatbotWidgetProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,61 +42,88 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
 
   // Initialize conversation based on context
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      initializeConversation();
-    }
-  }, [isOpen, context]);
+    let isMounted = true;
 
-  const initializeConversation = () => {
-    setIsTyping(true);
-    setTimeout(() => {
-      let greeting: Message;
+    const loadConversation = () => {
+      if (!isOpen || messages.length > 0) return;
 
-      if (context?.type === "search") {
-        greeting = {
-          id: 1,
-          type: "ai",
-          content: "👋 Hi! I'm your AI assistant. I can help you find the perfect barbershop based on your preferences. What are you looking for today?",
-          suggestions: [
-            "Find barbershops with classic cuts",
-            "Show me nearby premium barbershops",
-            "I need a quick trim",
-            "Best rated barbershops",
-          ],
-        };
-      } else if (context?.type === "barbershop-detail" && context.barbershopId) {
-        const barbershop = barbershops.find((b) => b.id === context.barbershopId);
-        const shopServices = services.filter((s) => s.barbershopId === context.barbershopId);
-        
-        greeting = {
-          id: 1,
-          type: "ai",
-          content: `👋 Hi! I can help you learn more about **${barbershop?.name || "this barbershop"}** and book services. What would you like to know?`,
-          suggestions: [
-            "What services are available?",
-            "Show me pricing",
-            "Who are the barbers?",
-            "Book an appointment",
-          ],
-        };
-      } else {
-        greeting = {
-          id: 1,
-          type: "ai",
-          content: "👋 Hi! I'm your AI style consultant. How can I help you today?",
-          suggestions: [
-            "Find a barbershop",
-            "AI face scan for recommendations",
-            "Browse services",
-            "View my bookings",
-          ],
-        };
+      try {
+        setIsTyping(true);
+
+        setTimeout(() => {
+          if (!isMounted) return;
+
+          let greeting: Message;
+
+          if (context?.type === "search") {
+            greeting = {
+              id: 1,
+              type: "ai",
+              content:
+                "👋 Hi! I'm your AI assistant. I can help you find the perfect barbershop based on your preferences. What are you looking for today?",
+              suggestions: [
+                "Find barbershops with classic cuts",
+                "Show me nearby premium barbershops",
+                "I need a quick trim",
+                "Best rated barbershops",
+              ],
+            };
+          } else if (
+            context?.type === "barbershop-detail" &&
+            context.barbershopId
+          ) {
+            const barbershop = barbershops.find(
+              (b) => b.id === context.barbershopId,
+            );
+            const shopServices = services.filter(
+              (s) => s.barbershopId === context.barbershopId,
+            );
+
+            greeting = {
+              id: 1,
+              type: "ai",
+              content: `👋 Hi! I can help you learn more about **${barbershop?.name || "this barbershop"}** and book services. What would you like to know?`,
+              suggestions: [
+                "What services are available?",
+                "Show me pricing",
+                "Who are the barbers?",
+                "Book an appointment",
+              ],
+            };
+          } else {
+            greeting = {
+              id: 1,
+              type: "ai",
+              content:
+                "👋 Hi! I'm your AI style consultant. How can I help you today?",
+              suggestions: [
+                "Find a barbershop",
+                "AI face scan for recommendations",
+                "Browse services",
+                "View my bookings",
+              ],
+            };
+          }
+
+          if (isMounted) {
+            setMessages([greeting]);
+            setIsTyping(false);
+          }
+        }, 500);
+      } catch (err) {
+        console.error("Error in loadConversation:", err);
+        if (isMounted) {
+          setIsTyping(false);
+        }
       }
+    };
 
-      setMessages([greeting]);
-      setIsTyping(false);
-    }, 500);
-  };
+    loadConversation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, context]);
 
   const handleSend = (messageText?: string) => {
     const text = messageText || input;
@@ -123,7 +154,7 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
     if (context?.type === "search") {
       if (userInput.includes("classic") || userInput.includes("traditional")) {
         const classicShops = barbershops.filter((b) =>
-          b.specialties?.some((s) => s.toLowerCase().includes("classic"))
+          b.specialties?.some((s) => s.toLowerCase().includes("classic")),
         );
         return {
           id: responseId,
@@ -144,7 +175,9 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
       }
 
       if (userInput.includes("rated") || userInput.includes("best")) {
-        const topRated = [...barbershops].sort((a, b) => b.rating - a.rating).slice(0, 3);
+        const topRated = [...barbershops]
+          .sort((a, b) => b.rating - a.rating)
+          .slice(0, 3);
         return {
           id: responseId,
           type: "ai",
@@ -165,15 +198,17 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
 
       if (userInput.includes("fade")) {
         const fadeShops = barbershops.filter((b) =>
-          b.specialties?.some((s) => s.toLowerCase().includes("fade"))
+          b.specialties?.some((s) => s.toLowerCase().includes("fade")),
         );
         return {
           id: responseId,
           type: "ai",
-          content: fadeShops.length > 0
-            ? `Found ${fadeShops.length} barbershops specializing in fades:`
-            : "Let me show you barbershops with fade specialists:",
-          barbershopCards: fadeShops.length > 0 ? fadeShops : barbershops.slice(0, 2),
+          content:
+            fadeShops.length > 0
+              ? `Found ${fadeShops.length} barbershops specializing in fades:`
+              : "Let me show you barbershops with fade specialists:",
+          barbershopCards:
+            fadeShops.length > 0 ? fadeShops : barbershops.slice(0, 2),
         };
       }
     }
@@ -181,30 +216,58 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
     // Context-aware responses for barbershop detail page
     if (context?.type === "barbershop-detail" && context.barbershopId) {
       const barbershop = barbershops.find((b) => b.id === context.barbershopId);
-      const shopServices = services.filter((s) => s.barbershopId === context.barbershopId);
-      const shopBarbers = barbers.filter((b) => b.barbershopId === context.barbershopId);
+      const shopServices = services.filter(
+        (s) => s.barbershopId === context.barbershopId,
+      );
+      const shopBarbers = barbers.filter(
+        (b) => b.barbershopId === context.barbershopId,
+      );
 
-      if (userInput.includes("service") || userInput.includes("price") || userInput.includes("cost")) {
-        const serviceList = shopServices.map((s) => `• **${s.name}** - ${s.price} (${s.duration})`).join("\n");
+      if (
+        userInput.includes("service") ||
+        userInput.includes("price") ||
+        userInput.includes("cost")
+      ) {
+        const serviceList = shopServices
+          .map((s) => `• **${s.name}** - ${s.price} (${s.duration})`)
+          .join("\n");
         return {
           id: responseId,
           type: "ai",
           content: `Here are the services available at ${barbershop?.name}:\n\n${serviceList}`,
-          suggestions: ["Book an appointment", "Tell me about the barbers", "What are the hours?"],
+          suggestions: [
+            "Book an appointment",
+            "Tell me about the barbers",
+            "What are the hours?",
+          ],
         };
       }
 
-      if (userInput.includes("barber") || userInput.includes("staff") || userInput.includes("who")) {
-        const barberList = shopBarbers.map((b) => `• **${b.name}** - ${b.title} (${b.experience})`).join("\n");
+      if (
+        userInput.includes("barber") ||
+        userInput.includes("staff") ||
+        userInput.includes("who")
+      ) {
+        const barberList = shopBarbers
+          .map((b) => `• **${b.name}** - ${b.title} (${b.experience})`)
+          .join("\n");
         return {
           id: responseId,
           type: "ai",
           content: `Meet our talented team:\n\n${barberList}\n\nAll our barbers are highly skilled professionals!`,
-          suggestions: ["Book with a specific barber", "View services", "Check availability"],
+          suggestions: [
+            "Book with a specific barber",
+            "View services",
+            "Check availability",
+          ],
         };
       }
 
-      if (userInput.includes("book") || userInput.includes("appointment") || userInput.includes("schedule")) {
+      if (
+        userInput.includes("book") ||
+        userInput.includes("appointment") ||
+        userInput.includes("schedule")
+      ) {
         return {
           id: responseId,
           type: "ai",
@@ -213,7 +276,11 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
         };
       }
 
-      if (userInput.includes("hours") || userInput.includes("open") || userInput.includes("time")) {
+      if (
+        userInput.includes("hours") ||
+        userInput.includes("open") ||
+        userInput.includes("time")
+      ) {
         const hoursList = Object.entries(barbershop?.hours || {})
           .map(([day, time]) => `• **${day}**: ${time}`)
           .join("\n");
@@ -231,7 +298,8 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
       return {
         id: responseId,
         type: "ai",
-        content: "Our AI Visual Consultant can analyze your face shape and recommend personalized hairstyles! Would you like to try it?",
+        content:
+          "Our AI Visual Consultant can analyze your face shape and recommend personalized hairstyles! Would you like to try it?",
         suggestions: ["Take me to AI scanner", "Tell me more"],
       };
     }
@@ -240,7 +308,8 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
       return {
         id: responseId,
         type: "ai",
-        content: "You can view and manage all your bookings in the My Bookings section. Would you like to go there?",
+        content:
+          "You can view and manage all your bookings in the My Bookings section. Would you like to go there?",
         suggestions: ["View my bookings", "Find barbershops"],
       };
     }
@@ -249,7 +318,8 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
     return {
       id: responseId,
       type: "ai",
-      content: "I can help you find barbershops, book appointments, or get personalized style recommendations. What would you like to do?",
+      content:
+        "I can help you find barbershops, book appointments, or get personalized style recommendations. What would you like to do?",
       suggestions: ["Find a barbershop", "AI face scan", "View my bookings"],
     };
   };
@@ -258,13 +328,19 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
     const lowerSuggestion = suggestion.toLowerCase();
 
     // Navigation suggestions
-    if (lowerSuggestion.includes("ai scanner") || lowerSuggestion.includes("ai scan")) {
+    if (
+      lowerSuggestion.includes("ai scanner") ||
+      lowerSuggestion.includes("ai scan")
+    ) {
       navigate("/ai-consultant");
       onClose();
       return;
     }
 
-    if (lowerSuggestion.includes("my bookings") || lowerSuggestion.includes("view my bookings")) {
+    if (
+      lowerSuggestion.includes("my bookings") ||
+      lowerSuggestion.includes("view my bookings")
+    ) {
       navigate("/my-bookings");
       onClose();
       return;
@@ -304,8 +380,8 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
           transform: isOpen
             ? "translateX(0) translateY(0)"
             : window.innerWidth < 768
-            ? "translateY(100%)"
-            : "translateX(100%)",
+              ? "translateY(100%)"
+              : "translateX(100%)",
         }}
       >
         {/* Header */}
@@ -316,7 +392,9 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
             </div>
             <div>
               <h2 className="font-bold text-card-foreground">AI Assistant</h2>
-              <p className="text-xs text-muted-foreground font-light">Always here to help</p>
+              <p className="text-xs text-muted-foreground font-light">
+                Always here to help
+              </p>
             </div>
           </div>
           <button
@@ -350,55 +428,62 @@ export function SmartChatbotWidget({ isOpen, onClose, context }: SmartChatbotWid
                 )}
 
                 {message.type === "user" && (
-                  <p className="font-light leading-relaxed">{message.content}</p>
+                  <p className="font-light leading-relaxed">
+                    {message.content}
+                  </p>
                 )}
 
                 {/* Barbershop Cards */}
-                {message.barbershopCards && message.barbershopCards.length > 0 && (
-                  <div className="space-y-3 mt-3">
-                    {message.barbershopCards.map((shop) => (
-                      <button
-                        key={shop.id}
-                        onClick={() => {
-                          navigate(`/barbershop/${shop.id}`);
-                          onClose();
-                        }}
-                        className="w-full bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all text-left"
-                      >
-                        <div className="flex gap-3 p-3">
-                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                            <img
-                              src={shop.coverImage}
-                              alt={shop.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-card-foreground mb-1 text-sm">
-                              {shop.name}
-                            </h4>
-                            <div className="flex items-center gap-1 text-muted-foreground text-xs mb-1">
-                              <MapPin className="w-3 h-3" />
-                              <span className="font-light truncate">{shop.location}</span>
+                {message.barbershopCards &&
+                  message.barbershopCards.length > 0 && (
+                    <div className="space-y-3 mt-3">
+                      {message.barbershopCards.map((shop) => (
+                        <button
+                          key={shop.id}
+                          onClick={() => {
+                            navigate(`/barbershop/${shop.id}`);
+                            onClose();
+                          }}
+                          className="w-full bg-card rounded-xl border border-border overflow-hidden hover:border-primary/50 transition-all text-left"
+                        >
+                          <div className="flex gap-3 p-3">
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                              <img
+                                src={shop.coverImage}
+                                alt={shop.name}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-primary text-primary" />
-                                <span className="text-xs font-bold text-card-foreground">
-                                  {shop.rating}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-card-foreground mb-1 text-sm">
+                                {shop.name}
+                              </h4>
+                              <div className="flex items-center gap-1 text-muted-foreground text-xs mb-1">
+                                <MapPin className="w-3 h-3" />
+                                <span className="font-light truncate">
+                                  {shop.location}
                                 </span>
                               </div>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-primary font-bold">
-                                {shop.priceRange}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Star className="w-3 h-3 fill-primary text-primary" />
+                                  <span className="text-xs font-bold text-card-foreground">
+                                    {shop.rating}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  •
+                                </span>
+                                <span className="text-xs text-primary font-bold">
+                                  {shop.priceRange}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                 {/* Suggestion Chips */}
                 {message.suggestions && (

@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Search, MapPin, Star, TrendingUp, Scissors, Award, Sparkles } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Star,
+  TrendingUp,
+  Scissors,
+  Award,
+  Sparkles,
+} from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import useBarbershopStore from "../../store/barbershopStore";
 import BarbershopCard from "../components/barbershop-card";
@@ -11,8 +19,22 @@ export function Home() {
   const { barbershops, fetchBarbershops } = useBarbershopStore();
 
   useEffect(() => {
-    fetchBarbershops();
-  }, [])
+    let isMounted = true;
+
+    const loadBarbershops = async () => {
+      try {
+        await fetchBarbershops();
+      } catch (err) {
+        console.error("Error in loadBarbershops:", err);
+      }
+    };
+
+    loadBarbershops();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const categories = [
     { name: "Classic Cuts", icon: Scissors },
@@ -35,13 +57,17 @@ export function Home() {
 
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="font-bold mb-6 tracking-tight text-foreground" style={{ fontSize: '4rem', lineHeight: '1.1' }}>
+            <h1
+              className="font-bold mb-6 tracking-tight text-foreground"
+              style={{ fontSize: "4rem", lineHeight: "1.1" }}
+            >
               Find Your Perfect
               <br />
               <span className="text-primary">Barbershop</span>
             </h1>
             <p className="text-xl text-muted-foreground font-light mb-12 leading-relaxed">
-              Discover and book premium barbershops near you. Compare services, read reviews, and get groomed.
+              Discover and book premium barbershops near you. Compare services,
+              read reviews, and get groomed.
             </p>
 
             {/* Search Bar */}
@@ -89,10 +115,14 @@ export function Home() {
             <div className="flex-1 text-center md:text-left">
               <h3 className="font-bold text-2xl text-foreground mb-2 flex items-center gap-2 justify-center md:justify-start">
                 Try Our AI Visual Consultant
-                <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">NEW</span>
+                <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">
+                  NEW
+                </span>
               </h3>
               <p className="text-muted-foreground font-light leading-relaxed">
-                Let AI analyze your face shape and recommend the perfect hairstyles tailored just for you. Get personalized suggestions in seconds!
+                Let AI analyze your face shape and recommend the perfect
+                hairstyles tailored just for you. Get personalized suggestions
+                in seconds!
               </p>
             </div>
             <div className="flex-shrink-0">
@@ -121,7 +151,9 @@ export function Home() {
                 <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors">
                   <Icon className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="font-bold text-card-foreground">{category.name}</h3>
+                <h3 className="font-bold text-card-foreground">
+                  {category.name}
+                </h3>
               </button>
             );
           })}
@@ -182,7 +214,8 @@ export function Home() {
                 Search & Discover
               </h3>
               <p className="text-muted-foreground font-light leading-relaxed">
-                Browse barbershops near you, compare ratings, services, and prices to find your perfect match.
+                Browse barbershops near you, compare ratings, services, and
+                prices to find your perfect match.
               </p>
             </div>
 
@@ -194,7 +227,8 @@ export function Home() {
                 Book Online
               </h3>
               <p className="text-muted-foreground font-light leading-relaxed">
-                Choose your service, select your preferred barber, and pick a convenient time slot in seconds.
+                Choose your service, select your preferred barber, and pick a
+                convenient time slot in seconds.
               </p>
             </div>
 
@@ -206,7 +240,8 @@ export function Home() {
                 Get Groomed
               </h3>
               <p className="text-muted-foreground font-light leading-relaxed">
-                Show up at your appointment and enjoy a premium grooming experience. Rate your visit afterward.
+                Show up at your appointment and enjoy a premium grooming
+                experience. Rate your visit afterward.
               </p>
             </div>
           </div>
@@ -216,11 +251,15 @@ export function Home() {
       {/* CTA Section */}
       <section className="container mx-auto px-6 py-24">
         <div className="bg-card rounded-xl p-12 md:p-16 text-center border border-border">
-          <h2 className="font-bold mb-6 text-card-foreground" style={{ fontSize: '2.5rem' }}>
+          <h2
+            className="font-bold mb-6 text-card-foreground"
+            style={{ fontSize: "2.5rem" }}
+          >
             Ready to Find Your Barber?
           </h2>
           <p className="text-muted-foreground font-light mb-8 text-lg max-w-2xl mx-auto leading-relaxed">
-            Join thousands of satisfied customers who book their grooming appointments through BarberBrody.
+            Join thousands of satisfied customers who book their grooming
+            appointments through BarberBrody.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link
@@ -230,7 +269,7 @@ export function Home() {
               Sign Up Now
             </Link>
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="inline-block px-8 py-4 bg-card text-card-foreground rounded-lg font-bold hover:bg-muted transition-colors border border-border"
             >
               Browse Barbershops

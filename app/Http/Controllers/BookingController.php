@@ -2,11 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
-use App\Models\Payment;
-use App\Services\XenditService;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Models\Booking;
 use App\Models\Barbershop;
 use App\Models\Service;
@@ -17,96 +12,21 @@ use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-    protected $xenditService;
 
-    public function __construct(XenditService $xenditService)
+    public function show(Request $request, String $id)
     {
-        $this->xenditService = $xenditService;
-    }
+        $booking = Booking::with(['service', 'capster', 'barbershop', 'payment'])->findOrFail($id);
 
-    public function storeBooking(Request $request)
-    {
-        $validated = $request->validated();
         $user = $request->user();
+        $isOwner = $user && $booking->user_id === $user->id;
+        $isBarbershopOwner = $user && $user->barbershop && $booking->barbershop_id === $user->barbershop->id;
 
-        DB::beginTransaction();
-        try {
-            // Create booking
-            $booking = Transaction::create([
-                'user_id' => $user->id,
-                'barbershop_id' => $validated['barbershop_id'],
-                'service_id' => $validated['service_id'],
-                'capster_id' => $validated['capster_id'],
-                'booking_date' => $validated['booking_date'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'status' => 'pending',
-                'total_price' => 0, // Will be set from service price
-            ]);
-
-            // Get service price
-            $service = $booking->service;
-            $booking->update(['total_price' => $service->price]);
-
-            // Create payment
-            $payment = Payment::create([
-                'booking_id' => $booking->id,
-                'amount' => $service->price,
-                'status' => 'pending',
-            ]);
-
-            // Create Xendit invoice
-            $invoiceData = [
-                'external_id' => $payment->id,
-                'amount' => $service->price,
-                'description' => 'Payment for booking ' . $booking->id,
-                'invoice_duration' => 86400, // 24 hours
-                'customer' => [
-                    'given_names' => $user->name,
-                    'email' => $user->email,
-                ],
-                'customer_notification_preference' => [
-                    'invoice_created' => ['whatsapp', 'sms', 'email'],
-                    'invoice_reminder' => ['whatsapp', 'sms', 'email'],
-                    'invoice_paid' => ['whatsapp', 'sms', 'email'],
-                    'invoice_expired' => ['whatsapp', 'sms', 'email'],
-                ],
-                'success_redirect_url' => config('app.url') . '/payment/success',
-                'failure_redirect_url' => config('app.url') . '/payment/failed',
-                'currency' => 'IDR',
-            ];
-
-            $invoice = $this->xenditService->createInvoice($invoiceData);
-
-            // Update payment with transaction_id
-            $payment->update([
-                'transaction_id' => $invoice['id'],
-                'payment_method' => 'xendit',
-            ]);
-
-            DB::commit();
-
-            Log::info('Booking and Payment Created', ['booking_id' => $booking->id, 'payment_id' => $payment->id]);
-
-            return response()->json([
-                'booking' => $booking->load(['service', 'capster', 'barbershop']),
-                'payment' => $payment,
-                'invoice_url' => $invoice['invoice_url'] ?? null,
-            ], 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Booking Creation Failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
-            return response()->json(['error' => 'Failed to create booking'], 500);
+        if (!$isOwner && !$isBarbershopOwner) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
-    }
-
-    public function show($id)
-    {
-        $booking = Transaction::with(['service', 'capster', 'barbershop', 'payment'])->findOrFail($id);
 
         return response()->json($booking);
     }
-
 
     public function getAvailableSlots(Request $request, Barbershop $barbershop)
     {
@@ -119,29 +39,36 @@ class BookingController extends Controller
         }
 
         $duration = Service::findOrFail($serviceId)->duration_minutes;
-        $start = Carbon::parse($barbershop->open_time);
-        $end = Carbon::parse($barbershop->close_time);
+        $start = $this->dateTimeFromDateAndTime($date, $barbershop->getRawOriginal('open_time'));
+        $end = $this->dateTimeFromDateAndTime($date, $barbershop->getRawOriginal('close_time'));
 
         $bookedSlots = Booking::where('capster_id', $capsterId)
             ->where('booking_date', $date)
             ->whereIn('status', ['pending', 'confirmed'])
+            ->with('service')
             ->get();
 
         $availableSlots = [];
-        $current = Carbon::parse($barbershop->open_time);
-        $closingTime = Carbon::parse($barbershop->close_time);
+        $current = $start->copy();
+        $closingTime = $end->copy();
+        $now = Carbon::now();
 
         while ($current->copy()->addMinutes($duration)->lessThanOrEqualTo($closingTime)) {
             $slotStart = $current->copy();
             $slotEnd = $current->copy()->addMinutes($duration);
 
+            if ($slotStart->lessThan($now)) {
+                $current->addMinutes(30); // Interval 30 menit
+                continue;
+            }
+
             $isBooked = $bookedSlots->contains(function ($booking) use ($slotStart, $slotEnd) {
-                $bookingStart = Carbon::parse($booking->booking_time);
+                $bookingDate = $booking->getRawOriginal('booking_date');
+                $bookingTime = $booking->getRawOriginal('booking_time');
+                $bookingStart = $this->dateTimeFromDateAndTime($bookingDate, $bookingTime);
                 $bookingEnd = $bookingStart->copy()->addMinutes($booking->service->duration_minutes);
 
-                return ($slotStart->between($bookingStart, $bookingEnd) ||
-                    $slotEnd->between($bookingStart, $bookingEnd) ||
-                    $bookingStart->between($slotStart, $slotEnd));
+                return $slotStart->lessThan($bookingEnd) && $slotEnd->greaterThan($bookingStart);
             });
 
             if (!$isBooked) {
@@ -200,38 +127,83 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'barbershop_id' => 'required|exists:barbershops,id',
-            'service_id' => 'required|exists:services,id',
-            'capster_id' => 'required|exists:capsters,id',
-            'booking_date' => 'required|date',
-            'booking_time' => 'required',
-        ]);
+        try {
 
-        $booking = Booking::create(array_merge($validated, [
-            'user_id' => $request->user()->id,
-            'status' => 'pending'
-        ]));
-
-        // Load barbershop owner to notify
-        $barbershop = Barbershop::findOrFail($validated['barbershop_id']);
-        $owner = $barbershop->user;
-
-        if ($owner) {
-            $formattedDate = \Carbon\Carbon::parse($booking->booking_date)->format('M d, Y');
-            $formattedTime = \Carbon\Carbon::parse($booking->booking_time)->format('h:i A');
-
-            $notification = Notification::create([
-                'user_id' => $owner->id,
-                'title' => 'New Booking Alert!',
-                'message' => 'A new booking has been made for ' . $barbershop->name . ' on ' . $formattedDate . ' at ' . $formattedTime,
-                'type' => 'booking_created',
-                'is_read' => false,
+            $validated = $request->validate([
+                'barbershop_id' => 'required|exists:barbershops,id',
+                'service_id' => 'required|exists:services,id',
+                'capster_id' => 'required|exists:capsters,id',
+                'booking_date' => 'required|date',
+                'booking_time' => 'required|date_format:H:i',
             ]);
 
-            event(new NotificationSent($notification));
-        }
+            $bookingDateTime = $this->dateTimeFromDateAndTime($validated['booking_date'], $validated['booking_time']);
 
-        return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
+            if ($bookingDateTime->lessThan(Carbon::now())) {
+                return response()->json(['message' => 'Tidak dapat booking jadwal yang sudah lewat.'], 422);
+            }
+
+            $booking = Booking::create(array_merge($validated, [
+                'user_id' => $request->user()->id,
+                'status' => 'pending'
+            ]));
+
+            // Load barbershop owner to notify
+            $barbershop = Barbershop::findOrFail($validated['barbershop_id']);
+            $owner = $barbershop->user;
+
+            if ($owner) {
+                $formattedDate = Carbon::parse($booking->created_at)->format('M d, Y');
+                $formattedTime = Carbon::parse($booking->booking_time)->format('h:i A');
+
+                $notification = Notification::create([
+                    'user_id' => $owner->id,
+                    'title' => 'New Booking Alert!',
+                    'message' => 'A new booking has been made for ' . $barbershop->name . ' on ' . $formattedDate . ' at ' . $formattedTime . '.',
+                    'type' => 'booking_created',
+                    'is_read' => false,
+                ]);
+
+                event(new NotificationSent($notification));
+            }
+
+            return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException) {
+                throw $e;
+            }
+
+            return response()->json(['message' => 'Error creating booking', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function cancelBooking(Request $request, Booking $booking)
+    {
+        try {
+
+            if ($booking->user_id !== $request->user()->id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            if (!in_array($booking->status, ['pending', 'confirmed'])) {
+                return response()->json(['message' => 'Cannot cancel this booking'], 400);
+            }
+
+            $booking->update(['status' => 'cancelled']);
+
+            return response()->json(['message' => 'Booking cancelled successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error cancelling booking', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function dateTimeFromDateAndTime(string $date, string $time): Carbon
+    {
+        return Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $this->normalizeTime($time));
+    }
+
+    private function normalizeTime(string $time): string
+    {
+        return strlen($time) === 5 ? $time . ':00' : $time;
     }
 }

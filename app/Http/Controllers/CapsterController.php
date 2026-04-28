@@ -124,19 +124,19 @@ class CapsterController extends Controller
         //
     }
 
-    public function changeAvailability(Request $request, Capster $capster)
+    public function toggleStatus(Capster $capster)
     {
         try {
             $capster->is_available = !$capster->is_available;
             $capster->save();
 
             return response()->json([
-                "message" => "Capster availability updated successfully",
-                "capster" => $capster,
+                "message" => "Capster status updated successfully",
+                // "capster" => $capster,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                "message" => "Failed to update capster availability",
+                "message" => "Failed to update capster status",
                 "error" => $e->getMessage(),
             ], 500);
         }

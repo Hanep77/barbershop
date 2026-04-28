@@ -22,10 +22,10 @@ return new class extends Migration
             $table->boolean("is_active")->default(true);
             $table->string("latitude");
             $table->string("longitude");
-            $table->decimal('balance', 15, 2)->default(0)->after('longitude');
-            $table->string('bank_name')->nullable()->after('balance');
-            $table->string('account_name')->nullable()->after('bank_name');
-            $table->string('account_number')->nullable()->after('account_name');
+            $table->decimal('balance', 15, 2)->default(0);
+            $table->string('bank_name')->nullable();
+            $table->string('account_name')->nullable();
+            $table->string('account_number')->nullable();
             $table->time("open_time")->default("09:00");
             $table->time("close_time")->default("21:00");
             $table->timestamps();

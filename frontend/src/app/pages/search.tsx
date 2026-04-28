@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { Search as SearchIcon, MapPin, SlidersHorizontal, Sparkles, X, Loader2 } from "lucide-react";
+import {
+  Search as SearchIcon,
+  MapPin,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+  Loader2,
+} from "lucide-react";
 import useBarbershopStore from "../../store/barbershopStore";
 import BarbershopCard from "../components/barbershop-card";
 
@@ -12,27 +19,58 @@ export function Search() {
   const { barbershops, fetchBarbershops, loading } = useBarbershopStore();
 
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
-    searchParams.get("specialty")
+    searchParams.get("specialty"),
   );
 
   const isAIRecommended = searchParams.get("ai_recommended") === "true";
 
   useEffect(() => {
-    fetchBarbershops();
+    let isMounted = true;
+
+    const loadBarbershops = async () => {
+      try {
+        await fetchBarbershops();
+      } catch (err) {
+        console.error("Error in loadBarbershops:", err);
+      }
+    };
+
+    loadBarbershops();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    // Sync specialty from URL params
-    const specialty = searchParams.get("specialty");
-    if (specialty) {
-      setSelectedSpecialty(specialty);
-    }
+    let isMounted = true;
+
+    const syncSpecialty = () => {
+      try {
+        const specialty = searchParams.get("specialty");
+        if (isMounted && specialty) {
+          setSelectedSpecialty(specialty);
+        }
+      } catch (err) {
+        console.error("Error in syncSpecialty:", err);
+      }
+    };
+
+    syncSpecialty();
+
+    return () => {
+      isMounted = false;
+    };
   }, [searchParams]);
 
   // Simple client-side filtering for now
   const results = barbershops.filter((shop) => {
-    const matchesQuery = shop.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = shop.address.toLowerCase().includes(locationQuery.toLowerCase());
+    const matchesQuery = shop.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesLocation = shop.address
+      .toLowerCase()
+      .includes(locationQuery.toLowerCase());
     // Note: specialty filtering is currently limited as it's not well-defined in the backend yet
     return matchesQuery && matchesLocation;
   });
@@ -88,10 +126,13 @@ export function Search() {
             <div className="bg-card rounded-xl p-6 border border-border sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-card-foreground">Filters</h3>
-                <button className="text-primary text-sm font-normal hover:text-primary/80" onClick={() => {
-                  setSearchQuery("");
-                  setLocationQuery("");
-                }}>
+                <button
+                  className="text-primary text-sm font-normal hover:text-primary/80"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setLocationQuery("");
+                  }}
+                >
                   Clear All
                 </button>
               </div>
@@ -103,7 +144,10 @@ export function Search() {
                 </h4>
                 <div className="space-y-2">
                   {["$", "$$", "$$$"].map((price) => (
-                    <label key={price} className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      key={price}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
@@ -123,7 +167,10 @@ export function Search() {
                 </h4>
                 <div className="space-y-2">
                   {[4.5, 4.0, 3.5].map((rating) => (
-                    <label key={rating} className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      key={rating}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="radio"
                         name="rating"
@@ -168,8 +215,10 @@ export function Search() {
                       </h3>
                       <p className="text-muted-foreground font-light text-sm">
                         Showing barbershops that specialize in{" "}
-                        <span className="text-primary font-bold">{selectedSpecialty}</span> styles,
-                        based on your AI consultation results.
+                        <span className="text-primary font-bold">
+                          {selectedSpecialty}
+                        </span>{" "}
+                        styles, based on your AI consultation results.
                       </p>
                     </div>
                   </div>
@@ -186,7 +235,11 @@ export function Search() {
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-muted-foreground font-light">
-                Found <span className="font-bold text-foreground">{results.length}</span> barbershops
+                Found{" "}
+                <span className="font-bold text-foreground">
+                  {results.length}
+                </span>{" "}
+                barbershops
               </p>
               <select className="px-4 py-2 bg-card border border-border rounded-lg text-card-foreground font-light focus:outline-none focus:ring-2 focus:ring-primary">
                 <option>Sort by: Recommended</option>
@@ -208,7 +261,9 @@ export function Search() {
             )}
             {!loading && results.length === 0 && (
               <div className="text-center py-20 bg-card rounded-xl border border-dashed border-border">
-                <p className="text-muted-foreground">No barbershops found matching your criteria.</p>
+                <p className="text-muted-foreground">
+                  No barbershops found matching your criteria.
+                </p>
               </div>
             )}
           </div>
