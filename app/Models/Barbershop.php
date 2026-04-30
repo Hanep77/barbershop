@@ -61,4 +61,9 @@ class Barbershop extends Model
     {
         return $this->hasMany(Rating::class);
     }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
 }

@@ -47,4 +47,33 @@ class XenditService
 
         return hash_equals($webhookToken, $callbackToken);
     }
+
+    public function refundInvoice(string $invoiceId, float $amount)
+    {
+        try {
+            $body = Http::withBasicAuth($this->apiKey, '')
+                ->acceptJson()
+                ->asJson()
+                ->post($this->baseUrl . "/v2/invoices/{$invoiceId}/refund", [
+                    'amount' => $amount
+                ])
+                ->throw()
+                ->json();
+
+            Log::info('Xendit Refund Requested', [
+                'invoice_id' => $invoiceId,
+                'amount' => $amount,
+                'response' => $body
+            ]);
+
+            return $body;
+        } catch (RequestException $e) {
+            Log::error('Xendit Refund Request Failed', [
+                'error' => $e->getMessage(),
+                'invoice_id' => $invoiceId,
+                'amount' => $amount,
+            ]);
+            throw $e;
+        }
+    }
 }

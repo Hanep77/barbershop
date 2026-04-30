@@ -172,4 +172,88 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Processing failed'], 500);
         }
     }
+
+    public function handleRefundWebhook(Request $request)
+    {
+        $payload = $request->getContent();
+        $callbackToken = $request->header('x-callback-token');
+        $webhookToken = config('services.xendit.webhook_token');
+
+        Log::info('Refund Webhook Received', ['payload' => $payload]);
+
+        // Validasi webhook token
+        if ($webhookToken && !$this->xenditService->verifyWebhookToken($callbackToken, $webhookToken)) {
+            Log::warning('Invalid Refund Webhook Token');
+            return response()->json(['error' => 'Invalid webhook token'], 401);
+        }
+
+        $data = json_decode($payload, true);
+
+        if (!$data) {
+            Log::warning('Invalid Refund Webhook Payload');
+            return response()->json(['error' => 'Invalid payload'], 400);
+        }
+
+        // Ambil invoice_id dari webhook data
+        // Xendit refund webhook biasanya mengirim: invoice_id, refund_id, status
+        $invoiceId = $data['invoice_id'] ?? $data['reference_id'] ?? null;
+        $refundStatus = $data['status'] ?? null;
+
+        if (!$invoiceId || !$refundStatus) {
+            Log::warning('Missing refund data in webhook', ['data' => $data]);
+            return response()->json(['error' => 'Missing required fields'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Cari payment berdasarkan transaction_id (invoice_id dari Xendit)
+            $payment = Payment::where('transaction_id', $invoiceId)->first();
+
+            if (!$payment) {
+                Log::warning('Payment Not Found for Refund', ['invoice_id' => $invoiceId]);
+                DB::rollBack();
+                return response()->json(['error' => 'Payment not found'], 404);
+            }
+
+            $booking = $payment->booking;
+
+            if (!$booking) {
+                Log::warning('Booking Not Found for Payment', ['payment_id' => $payment->id]);
+                DB::rollBack();
+                return response()->json(['error' => 'Booking not found'], 404);
+            }
+
+            // Handle berdasarkan status refund dari Xendit
+            if ($refundStatus === 'SUCCEEDED' || $refundStatus === 'success') {
+                // Refund sukses: update refund_status dan kurangi saldo barbershop
+                $booking->update(['refund_status' => 'success']);
+                $booking->barbershop->decrement('balance', $booking->refund_amount);
+
+                Log::info('Refund Success', [
+                    'booking_id' => $booking->id,
+                    'refund_amount' => $booking->refund_amount,
+                    'invoice_id' => $invoiceId
+                ]);
+            } elseif (in_array($refundStatus, ['FAILED', 'REJECTED', 'failed'])) {
+                // Refund gagal: update refund_status
+                $booking->update(['refund_status' => 'failed']);
+
+                Log::info('Refund Failed', [
+                    'booking_id' => $booking->id,
+                    'status' => $refundStatus,
+                    'invoice_id' => $invoiceId
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Refund webhook processed'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Refund Webhook Processing Failed', [
+                'error' => $e->getMessage(),
+                'invoice_id' => $invoiceId
+            ]);
+            return response()->json(['error' => 'Processing failed'], 500);
+        }
+    }
 }

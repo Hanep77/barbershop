@@ -23,7 +23,10 @@ export interface Booking {
   capster_id: string;
   booking_date: string;
   booking_time: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  refund_amount?: number;
+  refund_status?: "none" | "pending" | "success" | "failed";
+  cancellation_reason?: string | null;
   total_price?: number;
   created_at: string;
   updated_at: string;
@@ -33,7 +36,6 @@ export interface Booking {
   user?: User;
   payment?: Payment;
 }
-
 
 export interface CreateBookingRequest {
   barbershop_id: string;

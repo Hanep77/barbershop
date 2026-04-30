@@ -196,7 +196,7 @@ export function MyBookings() {
                       >
                         {booking.status}
                       </span>
-                      {booking.status === "pending" && (
+                      {booking.status === "pending" ? (
                         <button
                           onClick={() => {
                             navigate(`/checkout?booking_id=${booking.id}`);
@@ -204,6 +204,15 @@ export function MyBookings() {
                           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                         >
                           Complete Payment
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            navigate(`/booking/${booking.id}/cancel`);
+                          }}
+                          className="px-6 py-2.5 bg-red-500/70 text-white rounded-lg hover:bg-red-500/90 transition-colors"
+                        >
+                          Cancel Booking
                         </button>
                       )}
                     </div>

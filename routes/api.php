@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\WithdrawalController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\RatingController;
 use Illuminate\Support\Facades\Broadcast;
@@ -31,6 +32,7 @@ Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "inde
 Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class, "getAvailableSlots"]);
 Route::get("/barbershop/{barbershop}/ratings", [RatingController::class, "index"]);
 Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
+Route::post('/xendit/refund-webhook', [PaymentController::class, 'handleRefundWebhook']);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
@@ -67,6 +69,9 @@ Route::middleware("auth:sanctum")->group(function () {
 
             Route::get('/bookings', [BookingController::class, 'partnerIndex']);
             Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+
+            Route::get('/withdrawals', [WithdrawalController::class, 'index']);
+            Route::post('/withdrawals', [WithdrawalController::class, 'store']);
         });
     });
 
@@ -76,11 +81,10 @@ Route::middleware("auth:sanctum")->group(function () {
     // Bookings
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
+    Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancelBooking']);
 
     // Payments
     Route::get('/payments/detail/{id}', [PaymentController::class, 'show']);
     Route::get('/payments/{bookingId}', [PaymentController::class, 'getByBooking']);
     Route::post('/payments/create', [PaymentController::class, 'create']);
 });
-
-Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
