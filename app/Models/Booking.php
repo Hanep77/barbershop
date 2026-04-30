@@ -11,6 +11,7 @@ class Booking extends Model
     protected $casts = [
         'booking_date' => 'date',
         'booking_time' => 'datetime:H:i',
+        'refund_amount' => 'decimal:2',
     ];
 
     public function user()

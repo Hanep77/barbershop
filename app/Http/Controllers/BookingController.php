@@ -9,6 +9,8 @@ use App\Models\Notification;
 use App\Events\NotificationSent;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BookingController extends Controller
 {
@@ -180,18 +182,79 @@ class BookingController extends Controller
     public function cancelBooking(Request $request, Booking $booking)
     {
         try {
-
+            // 1. VALIDASI OWNERSHIP
             if ($booking->user_id !== $request->user()->id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
 
+            // 2. VALIDASI STATUS BOOKING
             if (!in_array($booking->status, ['pending', 'confirmed'])) {
                 return response()->json(['message' => 'Cannot cancel this booking'], 400);
             }
 
-            $booking->update(['status' => 'cancelled']);
+            // 3. HITUNG REFUND BERDASARKAN ATURAN WAKTU
+            $bookingDateTime = Carbon::parse($booking->booking_time);
+            $hoursDiff = now()->diffInHours($bookingDateTime, false);
 
-            return response()->json(['message' => 'Booking cancelled successfully']);
+            $refundAmount = 0;
+            if ($hoursDiff >= 2) {
+                // Refund 50% jika cancel >= 2 jam sebelum booking
+                $payment = $booking->payment;
+                $refundAmount = ($payment?->amount ?? 0) * 0.5;
+            }
+
+            // 4. GUNAKAN DB TRANSACTION
+            DB::beginTransaction();
+            try {
+                // 5. UPDATE BOOKING STATUS
+                $bookingData = [
+                    'status' => 'cancelled',
+                    'refund_amount' => $refundAmount,
+                    'cancellation_reason' => 'cancelled by customer',
+                ];
+
+                if ($refundAmount > 0) {
+                    $bookingData['refund_status'] = 'pending';
+
+                    // 6. REQUEST REFUND KE XENDIT (jika ada payment)
+                    $payment = $booking->payment;
+                    if ($payment && $payment->transaction_id) {
+                        try {
+                            $xenditService = new \App\Services\XenditService();
+                            $refundResponse = $xenditService->refundInvoice(
+                                $payment->transaction_id,
+                                $refundAmount
+                            );
+
+                            // Jika refund request sukses, set refund_status ke pending
+                            if ($refundResponse && isset($refundResponse['status'])) {
+                                $bookingData['refund_status'] = 'pending';
+                            } else {
+                                // Jika gagal request, set ke failed
+                                $bookingData['refund_status'] = 'failed';
+                            }
+                        } catch (\Exception $refundError) {
+                            // Jika error request ke Xendit, set ke failed
+                            $bookingData['refund_status'] = 'failed';
+                            Log::error('Refund request error', ['error' => $refundError->getMessage()]);
+                        }
+                    }
+                } else {
+                    $bookingData['refund_status'] = 'none';
+                }
+
+                $booking->update($bookingData);
+                DB::commit();
+
+                return response()->json([
+                    'message' => 'Booking cancelled successfully',
+                    'refund_amount' => $refundAmount,
+                    'refund_status' => $bookingData['refund_status']
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error cancelling booking', 'error' => $e->getMessage()], 500);
         }
