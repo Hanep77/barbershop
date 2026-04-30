@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CapsterController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\WithdrawalController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\RatingController;
 use Illuminate\Support\Facades\Broadcast;
@@ -67,6 +68,9 @@ Route::middleware("auth:sanctum")->group(function () {
 
             Route::get('/bookings', [BookingController::class, 'partnerIndex']);
             Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+
+            Route::get('/withdrawals', [WithdrawalController::class, 'index']);
+            Route::post('/withdrawals', [WithdrawalController::class, 'store']);
         });
     });
 
@@ -82,5 +86,3 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get('/payments/{bookingId}', [PaymentController::class, 'getByBooking']);
     Route::post('/payments/create', [PaymentController::class, 'create']);
 });
-
-Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
