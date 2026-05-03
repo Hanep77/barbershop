@@ -185,8 +185,7 @@ export function AdminServiceCategory() {
             <div>
               <h1 className="text-foreground mb-1">Service Categories</h1>
               <p className="text-sm text-muted-foreground">
-                Manage hair style categories used for service organization and
-                AI recommendations
+                Manage hair style categories used for service organization
               </p>
             </div>
             <Button onClick={() => handleOpenDialog()}>
@@ -206,11 +205,11 @@ export function AdminServiceCategory() {
               </div>
               <div className="flex-1">
                 <h4 className="text-sm text-foreground mb-1">
-                  Category Knowledge Base
+                  Service Organization
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Categories help structure your services and improve AI answers
-                  when customers ask for specific styles.
+                  Categories help structure your services and make it easier for
+                  customers to find what they're looking for.
                 </p>
               </div>
             </div>

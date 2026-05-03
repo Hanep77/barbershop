@@ -5,7 +5,6 @@ import {
   Search,
   Menu,
   X,
-  Sparkles,
   LogOut,
   LayoutDashboard,
   Settings,
@@ -13,8 +12,6 @@ import {
   Heart,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { FloatingChatButton } from "./floating-chat-button";
-import { SmartChatbotWidget } from "./smart-chatbot-widget";
 import useAuthStore from "../../store/authStore";
 import UserMenu from "./user-menu";
 import NotificationBell from "./notification-bell";
@@ -24,7 +21,6 @@ import { Badge } from "./ui/badge";
 export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
   const { user, logout } = useAuthStore();
 
   // Prevent scrolling when mobile menu is open
@@ -78,7 +74,6 @@ export function Layout() {
   const navItems = [
     { path: "/", label: "Home", icon: Scissors },
     { path: "/search", label: "Browse", icon: Search },
-    { path: "/ai-consultant", label: "AI Stylist", icon: Sparkles },
   ];
 
   const initials = user?.name
@@ -349,18 +344,6 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
-
-      {/* Floating Chat Button & Widget */}
-      <FloatingChatButton
-        onClick={() => setChatOpen(!chatOpen)}
-        isOpen={chatOpen}
-      />
-
-      <SmartChatbotWidget
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
-        context={{ type: "general" }}
-      />
 
       {/* Footer */}
       <footer className="border-t border-border mt-24">

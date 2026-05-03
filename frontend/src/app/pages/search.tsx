@@ -1,28 +1,19 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router";
 import {
   Search as SearchIcon,
   MapPin,
   SlidersHorizontal,
   Sparkles,
-  X,
   Loader2,
 } from "lucide-react";
 import useBarbershopStore from "../../store/barbershopStore";
 import BarbershopCard from "../components/barbershop-card";
 
 export function Search() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const { barbershops, fetchBarbershops, loading } = useBarbershopStore();
-
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
-    searchParams.get("specialty"),
-  );
-
-  const isAIRecommended = searchParams.get("ai_recommended") === "true";
 
   useEffect(() => {
     let isMounted = true;
@@ -42,43 +33,16 @@ export function Search() {
     };
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const syncSpecialty = () => {
-      try {
-        const specialty = searchParams.get("specialty");
-        if (isMounted && specialty) {
-          setSelectedSpecialty(specialty);
-        }
-      } catch (err) {
-        console.error("Error in syncSpecialty:", err);
-      }
-    };
-
-    syncSpecialty();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [searchParams]);
-
   // Simple client-side filtering for now
   const results = barbershops.filter((shop) => {
     const matchesQuery = shop.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesLocation = shop.address
+    const matchesLocation = (shop.address || "")
       .toLowerCase()
       .includes(locationQuery.toLowerCase());
-    // Note: specialty filtering is currently limited as it's not well-defined in the backend yet
     return matchesQuery && matchesLocation;
   });
-
-  const clearAIFilter = () => {
-    setSelectedSpecialty(null);
-    setSearchParams({});
-  };
 
   return (
     <div className="min-h-screen py-16">
@@ -198,41 +162,6 @@ export function Search() {
 
           {/* Results Grid */}
           <div className="flex-1">
-            {/* AI Recommendation Banner */}
-            {isAIRecommended && selectedSpecialty && (
-              <div className="mb-6 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border-2 border-primary/50 rounded-xl p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-foreground mb-1 flex items-center gap-2">
-                        AI-Recommended Barbershops
-                        <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">
-                          AI
-                        </span>
-                      </h3>
-                      <p className="text-muted-foreground font-light text-sm">
-                        Showing barbershops that specialize in{" "}
-                        <span className="text-primary font-bold">
-                          {selectedSpecialty}
-                        </span>{" "}
-                        styles, based on your AI consultation results.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={clearAIFilter}
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-sm"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear
-                  </button>
-                </div>
-              </div>
-            )}
-
             <div className="flex items-center justify-between mb-6">
               <p className="text-muted-foreground font-light">
                 Found{" "}

@@ -17,7 +17,6 @@ export interface Barbershop {
   };
   coverImage: string;
   gallery: string[];
-  specialties?: string[]; // Added for AI filtering
 }
 
 export interface Service {
@@ -68,116 +67,6 @@ export interface AdminBooking {
   notes?: string;
 }
 
-// AI Consultant Data Structures
-export type FaceShape = "oval" | "square" | "round" | "heart" | "diamond" | "oblong";
-
-export interface HairstyleRecommendation {
-  id: number;
-  name: string;
-  faceShapes: FaceShape[];
-  description: string;
-  image: string;
-  tags: string[];
-  difficulty: "easy" | "medium" | "advanced";
-}
-
-export interface FaceAnalysisResult {
-  faceShape: FaceShape;
-  confidence: number;
-  features: {
-    jawline: string;
-    cheekbones: string;
-    foreheadWidth: string;
-  };
-  recommendations: HairstyleRecommendation[];
-}
-
-// Hairstyle Recommendations Database
-export const hairstyleRecommendations: HairstyleRecommendation[] = [
-  {
-    id: 1,
-    name: "Classic Pompadour",
-    faceShapes: ["oval", "square", "diamond"],
-    description: "Voluminous top with short sides. Adds height and creates balanced proportions. Perfect for professional and casual settings.",
-    image: "https://images.unsplash.com/photo-1604160450680-b749dfebab6d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcG9tcGFkb3VyJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc3Mzk5MjEzNnww&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Classic", "Professional", "Timeless"],
-    difficulty: "medium",
-  },
-  {
-    id: 2,
-    name: "Textured Crop",
-    faceShapes: ["round", "square", "oval"],
-    description: "Short, textured cut with a defined fringe. Creates angles and adds visual length. Low maintenance and modern.",
-    image: "https://images.unsplash.com/photo-1657878337741-f805bb68b4b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZXh0dXJlZCUyMGNyb3AlMjBoYWlyY3V0JTIwbWFsZXxlbnwxfHx8fDE3NzM5OTIxMzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Modern", "Textured", "Low Maintenance"],
-    difficulty: "easy",
-  },
-  {
-    id: 3,
-    name: "Side Part Fade",
-    faceShapes: ["oval", "oblong", "square"],
-    description: "Clean side part with gradual fade. Sophisticated and versatile. Works for all occasions.",
-    image: "https://images.unsplash.com/photo-1690028377764-b038477bc7fc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaWRlJTIwcGFydCUyMGZhZGUlMjBoYWlyY3V0fGVufDF8fHx8MTc3Mzk5MjEzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Classic", "Fade", "Versatile"],
-    difficulty: "medium",
-  },
-  {
-    id: 4,
-    name: "Messy Quiff",
-    faceShapes: ["oval", "heart", "diamond"],
-    description: "Relaxed, voluminous front with textured styling. Adds height while maintaining a casual vibe.",
-    image: "https://images.unsplash.com/photo-1571565112616-eb30fab8bcf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZXNzeSUyMHF1aWZmJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc3Mzk5MjEzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Casual", "Textured", "Trendy"],
-    difficulty: "easy",
-  },
-  {
-    id: 5,
-    name: "Buzz Cut with Line Up",
-    faceShapes: ["oval", "square", "round"],
-    description: "Ultra-short with sharp edge work. Emphasizes bone structure and requires minimal styling.",
-    image: "https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXp6JTIwY3V0JTIwbGluZXVwJTIwYmFyYmVyfGVufDF8fHx8MTc3Mzk5MjEzOHww&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Clean", "Low Maintenance", "Bold"],
-    difficulty: "easy",
-  },
-  {
-    id: 6,
-    name: "Slick Back",
-    faceShapes: ["oval", "oblong", "diamond"],
-    description: "Combed back with shine. Elongates the face and exudes confidence. Best for formal settings.",
-    image: "https://images.unsplash.com/photo-1762106383160-24b6ef8f762d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbGlja2VkJTIwYmFjayUyMGhhaXIlMjBtYWxlfGVufDF8fHx8MTc3Mzk5MjEzOHww&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Formal", "Sleek", "Classic"],
-    difficulty: "medium",
-  },
-  {
-    id: 7,
-    name: "Curly Fringe",
-    faceShapes: ["round", "square", "heart"],
-    description: "Natural curls with defined fringe. Adds softness and frames the face beautifully.",
-    image: "https://images.unsplash.com/photo-1629613378258-fa6b82a22dcf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjdXJseSUyMGZyaW5nZSUyMG1hbGUlMjBoYWlyc3R5bGV8ZW58MXx8fHwxNzczOTkyMTM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Natural", "Curly", "Soft"],
-    difficulty: "easy",
-  },
-  {
-    id: 8,
-    name: "High and Tight",
-    faceShapes: ["square", "oval", "diamond"],
-    description: "Military-inspired with very short sides and slightly longer top. Sharp and masculine.",
-    image: "https://images.unsplash.com/photo-1543697506-6729425f7265?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaWdoJTIwdGlnaHQlMjBtaWxpdGFyeSUyMGhhaXJjdXR8ZW58MXx8fHwxNzczOTkyMTM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    tags: ["Military", "Sharp", "Masculine"],
-    difficulty: "easy",
-  },
-];
-
-// Face Shape Descriptions
-export const faceShapeDescriptions: Record<FaceShape, string> = {
-  oval: "Balanced proportions with gentle curves. The most versatile face shape - almost any hairstyle works!",
-  square: "Strong jawline with equal width and length. Angular features benefit from soft, textured styles.",
-  round: "Soft curves with similar width and length. Hairstyles with height and angles create visual length.",
-  heart: "Wider forehead tapering to a narrow chin. Styles with volume at the bottom balance the proportions.",
-  diamond: "Narrow forehead and chin with wide cheekbones. Styles that add width at the forehead work best.",
-  oblong: "Longer face with similar width throughout. Styles with volume on the sides create balance.",
-};
-
 // Barbershops in the marketplace
 export const barbershops: Barbershop[] = [
   {
@@ -199,7 +88,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Classic", "Professional", "Fade"],
   },
   {
     id: 2,
@@ -220,7 +108,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Formal", "Sleek", "Classic"],
   },
   {
     id: 3,
@@ -241,7 +128,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Classic", "Timeless", "Traditional"],
   },
   {
     id: 4,
@@ -262,7 +148,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Modern", "Textured", "Trendy"],
   },
   {
     id: 5,
@@ -283,7 +168,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Professional", "Formal", "Classic"],
   },
   {
     id: 6,
@@ -304,7 +188,6 @@ export const barbershops: Barbershop[] = [
     },
     coverImage: "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     gallery: [],
-    specialties: ["Fade", "Bold", "Sharp"],
   },
 ];
 

@@ -9,7 +9,6 @@ BarberBrody is a modern, full-stack barbershop marketplace and management system
 ### For Customers
 - **🔍 Smart Search:** Find barbershops by name, location, or services.
 - **📅 Easy Booking:** Seamlessly book appointments with your preferred barbers.
-- **🤖 AI Consultant:** Get personalized hair style advice from our built-in AI assistant.
 - **📍 Location Integration:** Interactive maps using Leaflet to find shops near you.
 - **⭐ Ratings & Reviews:** Read and leave feedback for services.
 - **📱 Responsive Design:** Optimized for both mobile and desktop experiences.

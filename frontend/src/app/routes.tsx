@@ -7,7 +7,6 @@ import { BarbershopDetail } from "./pages/barbershop-detail";
 import { Booking } from "./pages/booking";
 import { CancelBooking } from "./pages/cancel-booking";
 import { MyBookings } from "./pages/my-bookings";
-import { AIConsultant } from "./pages/ai-consultant";
 import { Login } from "./pages/login";
 import { Register } from "./pages/register";
 import { NotFound } from "./pages/not-found";
@@ -90,7 +89,6 @@ export const router = createBrowserRouter([
       { path: "booking", Component: Booking },
       { path: "booking/:booking_id/cancel", Component: CancelBooking },
       { path: "my-bookings", Component: MyBookings },
-      { path: "ai-consultant", Component: AIConsultant },
       { path: "services", element: <Navigate to="/search" replace /> },
       { path: "barbers", element: <Navigate to="/search" replace /> },
       { path: "checkout", Component: CheckoutPage },

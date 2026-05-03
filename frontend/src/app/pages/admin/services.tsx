@@ -253,8 +253,7 @@ export function AdminServices() {
             <div>
               <h1 className="text-foreground mb-1">Services Management</h1>
               <p className="text-sm text-muted-foreground">
-                Manage your services and hair style categories for AI
-                recommendations
+                Manage your services and hair style categories
               </p>
             </div>
             <Button onClick={() => handleOpenDialog()}>
@@ -266,29 +265,6 @@ export function AdminServices() {
       </div>
 
       <div className="p-6">
-        {/* AI Integration Notice */}
-        <Card className="bg-primary/5 border-primary/20 mb-6">
-          <div className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Tag className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm text-foreground mb-1">
-                  🤖 AI Integration & RAG System
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  The <strong>Hair Style Category</strong> field is crucial for
-                  our AI chatbot. Categories are converted into vector
-                  embeddings, allowing the RAG (Retrieval-Augmented Generation)
-                  system to intelligently recommend your services when customers
-                  ask about specific hairstyles.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
         {/* Search and Filters */}
         <Card className="bg-card mb-6">
           <div className="p-4">
@@ -407,8 +383,8 @@ export function AdminServices() {
               </DialogTitle>
               <DialogDescription>
                 {editingService
-                  ? "Update service information and category for AI recommendations"
-                  : "Create a new service with hair style category for AI recommendations"}
+                  ? "Update service information and category"
+                  : "Create a new service with hair style category"}
               </DialogDescription>
             </DialogHeader>
 
@@ -427,12 +403,7 @@ export function AdminServices() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">
-                  Hair Style Category *{" "}
-                  <Badge variant="secondary" className="ml-2">
-                    For AI/RAG
-                  </Badge>
-                </Label>
+                <Label htmlFor="category">Hair Style Category *</Label>
                 <Select
                   name="category_id"
                   value={formData.category_id}
@@ -452,8 +423,7 @@ export function AdminServices() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  This category helps our AI chatbot recommend this service to
-                  customers
+                  This category helps organize your services for customers
                 </p>
               </div>
 
@@ -510,8 +480,8 @@ export function AdminServices() {
                   className="resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
-                  A detailed description helps the AI provide better
-                  recommendations
+                  Provide a clear description to help customers understand the
+                  service
                 </p>
               </div>
             </div>

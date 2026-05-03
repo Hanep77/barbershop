@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Scissors,
   Award,
-  Sparkles,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import useBarbershopStore from "../../store/barbershopStore";
@@ -100,39 +99,6 @@ export function Home() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* AI Consultant CTA Banner */}
-      <section className="container mx-auto px-6 -mt-12 relative z-20">
-        <Link
-          to="/ai-consultant"
-          className="block bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border-2 border-primary/50 rounded-xl p-8 hover:border-primary transition-all group"
-        >
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-              <Sparkles className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="font-bold text-2xl text-foreground mb-2 flex items-center gap-2 justify-center md:justify-start">
-                Try Our AI Visual Consultant
-                <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full font-bold">
-                  NEW
-                </span>
-              </h3>
-              <p className="text-muted-foreground font-light leading-relaxed">
-                Let AI analyze your face shape and recommend the perfect
-                hairstyles tailored just for you. Get personalized suggestions
-                in seconds!
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <span className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-bold group-hover:bg-primary/90 transition-colors">
-                Try Now
-                <Sparkles className="w-4 h-4" />
-              </span>
-            </div>
-          </div>
-        </Link>
       </section>
 
       {/* Popular Categories */}

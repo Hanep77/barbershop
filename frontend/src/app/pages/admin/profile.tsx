@@ -182,8 +182,8 @@ export function AdminProfile() {
                   className="resize-none text-foreground"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This description will be shown to customers and used by our AI
-                  chatbot to recommend your barbershop.
+                  This description will be shown to customers when they view
+                  your barbershop profile.
                 </p>
               </div>
 
@@ -352,8 +352,8 @@ export function AdminProfile() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                💡 <strong>AI Integration:</strong> These photos will be shown
-                by the chatbot when recommending your barbershop to customers.
+                💡 <strong>Tip:</strong> These photos will be shown on your
+                public barbershop profile to attract customers.
               </p>
             </div>
           </Card>
