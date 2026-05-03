@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string("latitude");
             $table->string("longitude");
             $table->decimal('balance', 15, 2)->default(0);
+            $table->decimal('rating', 3, 2)->default(0);
             $table->string('bank_name')->nullable();
             $table->string('account_name')->nullable();
             $table->string('account_number')->nullable();

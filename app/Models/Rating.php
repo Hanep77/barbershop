@@ -13,6 +13,7 @@ class Rating extends Model
     protected $fillable = [
         'user_id',
         'barbershop_id',
+        'capster_id',
         'booking_id',
         'rating',
         'comment',
@@ -26,6 +27,11 @@ class Rating extends Model
     public function barbershop()
     {
         return $this->belongsTo(Barbershop::class);
+    }
+
+    public function capster()
+    {
+        return $this->belongsTo(Capster::class);
     }
 
     public function booking()

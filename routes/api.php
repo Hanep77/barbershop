@@ -40,6 +40,8 @@ Route::middleware("auth:sanctum")->group(function () {
     Route::get("/bookings", [BookingController::class, "index"]);
     Route::post("/bookings", [BookingController::class, "store"]);
     Route::post("/ratings", [RatingController::class, "store"]);
+    Route::put("/ratings/{rating}", [RatingController::class, "update"]);
+    Route::delete("/ratings/{rating}", [RatingController::class, "destroy"]);
 
     Route::get("/notifications", [NotificationController::class, "index"]);
     Route::get("/notifications/unread-count", [NotificationController::class, "unreadCount"]);

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('title');
             $table->string('experience');
-            $table->decimal('rating', 3, 2);
+            $table->decimal('rating', 3, 2)->default(0);
             $table->json('specialties');
             $table->string('phone');
             $table->boolean("is_available")->default(true);

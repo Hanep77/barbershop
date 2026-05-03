@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->foreignUuid('barbershop_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('capster_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('booking_id')->constrained()->onDelete('cascade');
             $table->integer('rating');
             $table->text('comment')->nullable();

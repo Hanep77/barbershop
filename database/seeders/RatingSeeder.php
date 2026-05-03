@@ -15,21 +15,39 @@ class RatingSeeder extends Seeder
     {
         $completedBookings = Booking::where('status', 'completed')->get();
 
+        if ($completedBookings->isEmpty()) {
+            return;
+        }
+
         // Create ratings for about 60% of completed bookings
-        $bookingsToRate = $completedBookings->random((int)($completedBookings->count() * 0.6));
+        $countToRate = (int)($completedBookings->count() * 0.6);
+        $bookingsToRate = $completedBookings->random($countToRate > 0 ? $countToRate : 0);
 
         foreach ($bookingsToRate as $booking) {
             // Bias towards higher ratings
             $ratingValue = $this->weightedRatingRandom();
 
-            Rating::create([
+            \App\Models\Rating::create([
                 'user_id' => $booking->user_id,
                 'barbershop_id' => $booking->barbershop_id,
+                'capster_id' => $booking->capster_id, // Link to capster from booking
                 'booking_id' => $booking->id,
                 'rating' => $ratingValue,
                 'comment' => $this->generateComment($ratingValue),
             ]);
         }
+
+        // Recalculate average ratings for all barbershops
+        \App\Models\Barbershop::all()->each(function ($shop) {
+            $avg = \App\Models\Rating::where('barbershop_id', $shop->id)->avg('rating') ?: 0;
+            $shop->update(['rating' => $avg]);
+        });
+
+        // Recalculate average ratings for all capsters
+        \App\Models\Capster::all()->each(function ($capster) {
+            $avg = \App\Models\Rating::where('capster_id', $capster->id)->avg('rating') ?: 0;
+            $capster->update(['rating' => $avg]);
+        });
     }
 
     private function weightedRatingRandom()

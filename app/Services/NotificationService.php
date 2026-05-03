@@ -121,4 +121,22 @@ class NotificationService
             );
         }
     }
+
+    /**
+     * Send notification for new review to barbershop owner.
+     */
+    public static function notifyNewReview($rating)
+    {
+        $barbershop = $rating->barbershop;
+        $owner = $barbershop->user;
+
+        if ($owner) {
+            self::send(
+                $owner,
+                'New Review Received!',
+                "Your shop just received a {$rating->rating}-star review from {$rating->user->name}.",
+                'review_created'
+            );
+        }
+    }
 }

@@ -358,9 +358,20 @@ export function BarbershopDetail() {
                 </div>
 
                 <div className="p-6">
-                  <h3 className="font-bold text-xl text-card-foreground mb-1">
-                    {capster.name}
-                  </h3>
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-bold text-xl text-card-foreground">
+                      {capster.name}
+                    </h3>
+                    <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-lg">
+                    <Star className="w-3 h-3 fill-primary text-primary" />
+                    <span className="text-xs font-bold text-primary">
+                      {capster.rating
+                        ? parseFloat(
+                            String(capster.rating),
+                          ).toFixed(1)
+                        : "New"}
+                    </span>
+                    </div>                  </div>
                   <p className="text-primary font-normal mb-1">
                     {capster.title}
                   </p>

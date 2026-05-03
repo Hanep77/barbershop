@@ -335,8 +335,11 @@ export function MyBookings() {
                 <p className="text-muted-foreground mb-1 text-sm">
                   How was your experience at
                 </p>
-                <p className="font-bold text-lg text-primary">
+                <p className="font-bold text-lg text-primary mb-2">
                   {selectedBooking.barbershop?.name}
+                </p>
+                <p className="text-xs text-muted-foreground font-light">
+                  Barber: {selectedBooking.capster?.name}
                 </p>
               </div>
               <div className="flex justify-center gap-2 mb-8">

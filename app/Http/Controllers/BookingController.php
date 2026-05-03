@@ -129,6 +129,16 @@ class BookingController extends Controller
         $booking->load(['user', 'barbershop', 'service']);
         NotificationService::notifyBookingStatusUpdated($booking);
 
+        // Specific notification for completed status to encourage review
+        if ($validated['status'] === 'completed') {
+            NotificationService::send(
+                $booking->user,
+                'Layanan Selesai!',
+                "Layanan Anda di {$booking->barbershop->name} telah selesai. Berikan ulasan Anda sekarang!",
+                'booking_completed_review'
+            );
+        }
+
         return response()->json(['message' => 'Booking status updated successfully', 'booking' => $booking]);
     }
 
