@@ -22,6 +22,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { id } from "date-fns/locale";
 
+import { toast } from "sonner";
+
 const NotificationBell: React.FC = () => {
   const {
     notifications,
@@ -57,6 +59,13 @@ const NotificationBell: React.FC = () => {
           if (isMounted) {
             console.log("Real-time notification received:", e);
             addNotification(e.notification);
+            toast(e.notification.title, {
+              description: e.notification.message,
+              action: {
+                label: "Mark as Read",
+                onClick: () => markAsRead(e.notification.id),
+              },
+            });
           }
         });
 

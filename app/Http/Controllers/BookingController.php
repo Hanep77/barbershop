@@ -7,6 +7,7 @@ use App\Models\Barbershop;
 use App\Models\Service;
 use App\Models\Notification;
 use App\Events\NotificationSent;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -123,6 +124,10 @@ class BookingController extends Controller
         ]);
 
         $booking->update($validated);
+        
+        // Notify customer about status change
+        $booking->load(['user', 'barbershop', 'service']);
+        NotificationService::notifyBookingStatusUpdated($booking);
 
         return response()->json(['message' => 'Booking status updated successfully', 'booking' => $booking]);
     }
@@ -150,24 +155,9 @@ class BookingController extends Controller
                 'status' => 'pending'
             ]));
 
-            // Load barbershop owner to notify
-            $barbershop = Barbershop::findOrFail($validated['barbershop_id']);
-            $owner = $barbershop->user;
-
-            if ($owner) {
-                $formattedDate = Carbon::parse($booking->created_at)->format('M d, Y');
-                $formattedTime = Carbon::parse($booking->booking_time)->format('h:i A');
-
-                $notification = Notification::create([
-                    'user_id' => $owner->id,
-                    'title' => 'New Booking Alert!',
-                    'message' => 'A new booking has been made for ' . $barbershop->name . ' on ' . $formattedDate . ' at ' . $formattedTime . '.',
-                    'type' => 'booking_created',
-                    'is_read' => false,
-                ]);
-
-                event(new NotificationSent($notification));
-            }
+            // Load relations for notification
+            $booking->load(['barbershop.user', 'user', 'service']);
+            NotificationService::notifyNewBooking($booking);
 
             return response()->json(['message' => 'Booking created successfully', 'booking' => $booking], 201);
         } catch (\Exception $e) {
@@ -244,6 +234,11 @@ class BookingController extends Controller
                 }
 
                 $booking->update($bookingData);
+                
+                // Notify both parties about cancellation
+                $booking->load(['user', 'barbershop.user', 'service']);
+                NotificationService::notifyCancellation($booking, 'customer');
+
                 DB::commit();
 
                 return response()->json([

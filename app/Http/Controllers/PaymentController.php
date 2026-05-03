@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Payment;
 use App\Services\XenditService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -157,10 +158,19 @@ class PaymentController extends Controller
 
                 $booking->barbershop->increment('balance', $payment->amount);
 
+                // Notify customer about successful payment
+                $booking->load(['user', 'barbershop', 'service']);
+                NotificationService::notifyPaymentStatus($payment, 'success');
+
                 Log::info('Payment Success', ['booking_id' => $booking->id]);
             } elseif (in_array($status, ['EXPIRED', 'FAILED'])) {
                 $payment->update(['status' => 'failed']);
                 $booking->update(['status' => 'cancelled']);
+
+                // Notify customer about failed payment
+                $booking->load(['user', 'barbershop', 'service']);
+                NotificationService::notifyPaymentStatus($payment, 'failed');
+
                 Log::info('Payment Failed', ['booking_id' => $bookingId, 'status' => $status]);
             }
 
