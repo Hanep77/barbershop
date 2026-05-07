@@ -35,6 +35,19 @@ export function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        fetchBarbershops(searchQuery || undefined);
+      }
+    }, 500);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, fetchBarbershops]);
+
   const categories = [
     { name: "Classic Cuts", icon: Scissors },
     { name: "Beard Grooming", icon: Award },

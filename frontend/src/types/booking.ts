@@ -2,6 +2,7 @@ import type { Barbershop } from "./barbershop";
 import type { Service } from "./services";
 import type { Capster } from "./capster";
 import type { User } from "./auth";
+import type { Rating } from "./rating";
 
 export interface Payment {
   id: string;
@@ -35,6 +36,7 @@ export interface Booking {
   capster?: Capster;
   user?: User;
   payment?: Payment;
+  rating?: Rating;
 }
 
 export interface CreateBookingRequest {

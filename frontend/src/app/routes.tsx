@@ -17,9 +17,11 @@ import { AdminServiceCategory } from "./pages/admin/service-category";
 import { AdminCapsters } from "./pages/admin/capsters";
 import { AdminBookings } from "./pages/admin/bookings";
 import { AdminSettings } from "./pages/admin/settings";
+import { AdminWithdraw } from "./pages/admin/withdrawals";
 import { RegisterBarbershop } from "./pages/admin/register-barbershop";
 import GuestOnly from "../middleware/GuestOnly";
 import RequireBarbershop from "../middleware/RequireBarbershop";
+import CustomerOnly from "../middleware/CustomerOnly";
 import AuthCallback from "./pages/auth-callback";
 import AdminOnly from "../middleware/AdminOnly";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -66,6 +68,7 @@ export const router = createBrowserRouter([
               { path: "services", Component: AdminServices },
               { path: "capsters", Component: AdminCapsters },
               { path: "bookings", Component: AdminBookings },
+              { path: "withdrawals", Component: AdminWithdraw },
               { path: "settings", Component: AdminSettings },
             ],
           },
@@ -86,12 +89,18 @@ export const router = createBrowserRouter([
       { index: true, Component: Home },
       { path: "search", Component: Search },
       { path: "barbershop/:id", Component: BarbershopDetail },
-      { path: "booking", Component: Booking },
+      // Customer-only routes
+      {
+        Component: CustomerOnly,
+        children: [
+          { path: "booking", Component: Booking },
+          { path: "checkout", Component: CheckoutPage },
+        ],
+      },
       { path: "booking/:booking_id/cancel", Component: CancelBooking },
       { path: "my-bookings", Component: MyBookings },
       { path: "services", element: <Navigate to="/search" replace /> },
       { path: "barbers", element: <Navigate to="/search" replace /> },
-      { path: "checkout", Component: CheckoutPage },
       { path: "payment/return", Component: PaymentReturnPage },
       { path: "*", Component: NotFound },
     ],

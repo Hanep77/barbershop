@@ -21,9 +21,14 @@ class PartnerBarbershopController extends Controller
     {
         $user = $request->user();
 
+        $barbershop = $user->barbershop()->first();
+
+        $barbershop->load('withdrawals');
+
+
         if ($user->barbershop()->exists()) {
             return response()->json([
-                "barbershop" => $user->barbershop()->first(),
+                "barbershop" => $barbershop,
                 "user" => $user->only("name", "email", "avatar")
             ], 200);
         }

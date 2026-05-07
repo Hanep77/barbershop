@@ -43,7 +43,7 @@ class NotificationService
         if ($owner) {
             $date = \Carbon\Carbon::parse($booking->booking_date)->format('d M Y');
             $time = \Carbon\Carbon::parse($booking->booking_time)->format('H:i');
-            
+
             self::send(
                 $owner,
                 'New Booking Alert!',
@@ -60,7 +60,7 @@ class NotificationService
     {
         $user = $booking->user;
         $status = ucfirst($booking->status);
-        
+
         self::send(
             $user,
             "Booking {$status}",
@@ -123,6 +123,30 @@ class NotificationService
     }
 
     /**
+     * Send notification when barbershop cancels a booking.
+     */
+    public static function notifyCancellationByBarbershop($booking)
+    {
+        $customer = $booking->user;
+        $date = \Carbon\Carbon::parse($booking->booking_date)->format('d M Y');
+        $time = \Carbon\Carbon::parse($booking->booking_time)->format('H:i');
+        $refundAmount = $booking->refund_amount ?? 0;
+
+        // Notify customer about cancellation by barbershop with refund info
+        $message = "Your booking at {$booking->barbershop->name} on {$date} at {$time} has been cancelled by the barbershop.";
+        if ($refundAmount > 0) {
+            $message .= " You will receive a refund of IDR " . number_format($refundAmount, 0, ',', '.');
+        }
+
+        self::send(
+            $customer,
+            'Booking Cancelled by Barbershop',
+            $message,
+            'booking_cancelled_by_barbershop'
+        );
+    }
+
+    /**
      * Send notification for new review to barbershop owner.
      */
     public static function notifyNewReview($rating)
@@ -136,6 +160,35 @@ class NotificationService
                 'New Review Received!',
                 "Your shop just received a {$rating->rating}-star review from {$rating->user->name}.",
                 'review_created'
+            );
+        }
+    }
+
+    /**
+     * Send notification for no-show to customer and barbershop owner.
+     */
+    public static function notifyNoShow($booking)
+    {
+        $customer = $booking->user;
+        $owner = $booking->barbershop->user;
+        $date = \Carbon\Carbon::parse($booking->booking_date)->format('d M Y');
+        $time = \Carbon\Carbon::parse($booking->booking_time)->format('H:i');
+
+        // Notify customer about no-show
+        self::send(
+            $customer,
+            'Booking Marked as No-Show',
+            "Your booking at {$booking->barbershop->name} on {$date} at {$time} has been marked as no-show due to non-arrival within the tolerance period.",
+            'booking_no_show'
+        );
+
+        // Notify owner
+        if ($owner) {
+            self::send(
+                $owner,
+                'Booking No-Show',
+                "Booking from {$customer->name} on {$date} at {$time} has been marked as no-show.",
+                'booking_no_show'
             );
         }
     }

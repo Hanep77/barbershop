@@ -6,7 +6,7 @@ interface BarbershopState {
   barbershops: Barbershop[];
   loading: boolean;
   error: string | null;
-  fetchBarbershops: () => Promise<void>;
+  fetchBarbershops: (search?: string) => Promise<void>;
 }
 
 const useBarbershopStore = create<BarbershopState>((set) => ({
@@ -14,10 +14,10 @@ const useBarbershopStore = create<BarbershopState>((set) => ({
   loading: false,
   error: null,
 
-  fetchBarbershops: async () => {
+  fetchBarbershops: async (search?: string) => {
     set({ loading: true, error: null });
     try {
-      const res = await getAllBarbershop();
+      const res = await getAllBarbershop(search);
       set({ barbershops: res.data as Barbershop[] });
     } catch (err: unknown) {
       const message =
