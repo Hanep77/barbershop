@@ -8,7 +8,7 @@ class WithdrawalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user() && $this->user()->role === 'barbershop';
     }
 
     public function rules(): array
@@ -17,6 +17,7 @@ class WithdrawalRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:10000'],
             'bank_name' => ['required', 'string'],
             'account_number' => ['required', 'string'],
+            'account_name' => ['required', 'string'],
         ];
     }
 
@@ -28,6 +29,7 @@ class WithdrawalRequest extends FormRequest
             'amount.min' => 'Jumlah withdraw minimal 10000.',
             'bank_name.required' => 'Nama bank wajib diisi.',
             'account_number.required' => 'Nomor rekening wajib diisi.',
+            'account_name.required' => 'Nama pemilik rekening wajib diisi.',
         ];
     }
 }

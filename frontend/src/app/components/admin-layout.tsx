@@ -9,6 +9,7 @@ import {
   LogOut,
   Store,
   PocketKnife,
+  DollarSign,
 } from "lucide-react";
 import NotificationBell from "./notification-bell";
 import UserMenu from "./user-menu";
@@ -50,6 +51,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       icon: Calendar,
       label: "Bookings",
       path: "/admin/bookings",
+    },
+    {
+      icon: DollarSign,
+      label: "Withdrawals",
+      path: "/admin/withdrawals",
     },
     {
       icon: Settings,

@@ -266,4 +266,121 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Processing failed'], 500);
         }
     }
+
+    public function handleWithdrawalWebhook(Request $request)
+    {
+        $payload = $request->getContent();
+        $callbackToken = $request->header('x-callback-token');
+        $webhookToken = config('services.xendit.webhook_token');
+
+        Log::info('Withdrawal Webhook Received', ['payload' => $payload]);
+
+        // Validasi webhook token
+        if ($webhookToken && !$this->xenditService->verifyWebhookToken($callbackToken, $webhookToken)) {
+            Log::warning('Invalid Withdrawal Webhook Token');
+            return response()->json(['error' => 'Invalid webhook token'], 401);
+        }
+
+        $data = json_decode($payload, true);
+
+        if (!$data || !isset($data['reference_id'])) {
+            Log::warning('Invalid Withdrawal Webhook Payload');
+            return response()->json(['error' => 'Invalid payload'], 400);
+        }
+
+        $externalId = $data['reference_id'];
+        $status = $data['status'] ?? null;
+
+        // External ID harus dimulai dengan withdrawal-
+        if (!str_starts_with($externalId, 'withdrawal-')) {
+            return response()->json(['error' => 'Invalid external_id'], 400);
+        }
+
+        $withdrawal = \App\Models\Withdrawal::where('external_id', $externalId)->first();
+
+        if (!$withdrawal) {
+            Log::warning('Withdrawal Not Found', ['external_id' => $externalId]);
+            return response()->json(['error' => 'Withdrawal not found'], 404);
+        }
+
+        // Idempotency: jika sudah processed sebagai success, jangan proses lagi
+        if ($withdrawal->status === 'success') {
+            Log::info('Withdrawal Already Processed as Success', ['external_id' => $externalId]);
+            return response()->json(['message' => 'Already processed'], 200);
+        }
+
+        // Jika sudah failed, jangan proses lagi
+        if ($withdrawal->status === 'failed') {
+            Log::info('Withdrawal Already Failed', ['external_id' => $externalId]);
+            return response()->json(['message' => 'Already processed as failed'], 200);
+        }
+
+        DB::beginTransaction();
+        try {
+            $barbershop = $withdrawal->barbershop;
+
+            // Handle berdasarkan status dari Xendit
+            if (in_array($status, ['COMPLETED', 'SUCCEEDED', 'completed', 'succeeded', 'SUCCESS'])) {
+                // Payout sukses: update status dan kurangi saldo barbershop
+                $withdrawal->update([
+                    'status' => 'success',
+                    'xendit_status' => $status,
+                    'processed_at' => now(),
+                    'webhook_payload' => $data,
+                ]);
+
+                // Kurangi saldo barbershop hanya saat webhook success
+                $barbershop->decrement('balance', $withdrawal->amount);
+
+                // Notifikasi
+                NotificationService::send(
+                    $barbershop->user,
+                    'Withdraw Berhasil!',
+                    "Withdraw sebesar IDR " . number_format($withdrawal->amount, 0, ',', '.') . " telah berhasil diproses.",
+                    'withdraw_success'
+                );
+
+                Log::info('Withdrawal Success', [
+                    'withdrawal_id' => $withdrawal->id,
+                    'amount' => $withdrawal->amount,
+                    'external_id' => $externalId
+                ]);
+            } elseif (in_array($status, ['FAILED', 'REJECTED', 'failed', 'rejected'])) {
+                // Payout gagal: update status dan simpan failure reason
+                $withdrawal->update([
+                    'status' => 'failed',
+                    'xendit_status' => $status,
+                    'failure_code' => $data['failure_code'] ?? null,
+                    'failure_reason' => $data['failure_reason'] ?? 'Unknown error',
+                    'processed_at' => now(),
+                    'webhook_payload' => $data,
+                ]);
+
+                // Notifikasi
+                NotificationService::send(
+                    $barbershop->user,
+                    'Withdraw Gagal',
+                    "Withdraw sebesar IDR " . number_format($withdrawal->amount, 0, ',', '.') . " gagal diproses: " . ($data['failure_reason'] ?? 'Unknown error'),
+                    'withdraw_failed'
+                );
+
+                Log::info('Withdrawal Failed', [
+                    'withdrawal_id' => $withdrawal->id,
+                    'status' => $status,
+                    'external_id' => $externalId,
+                    'failure_reason' => $data['failure_reason'] ?? null
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['message' => 'Withdrawal webhook processed'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Withdrawal Webhook Processing Failed', [
+                'error' => $e->getMessage(),
+                'external_id' => $externalId
+            ]);
+            return response()->json(['error' => 'Processing failed'], 500);
+        }
+    }
 }

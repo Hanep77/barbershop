@@ -12,7 +12,9 @@ class CreateBookingRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Assuming authenticated users can create bookings
+        // Only customer role can create bookings
+        // Barbershop/admin cannot make reservations
+        return $this->user() && $this->user()->role === 'customer';
     }
 
     /**

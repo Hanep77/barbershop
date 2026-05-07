@@ -15,6 +15,7 @@ import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
 import { getServiceCategoriesByBarbershop } from "../../services/serviceCategory";
 import { getBarbershopRatings } from "../../services/rating";
+import useAuthStore from "../../store/authStore";
 import type { Barbershop } from "../../types/barbershop";
 import type { Service } from "../../types/services";
 import type { Capster } from "../../types/capster";
@@ -24,6 +25,7 @@ import type { Rating } from "../../types/rating";
 export function BarbershopDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<
     "services" | "capsters" | "reviews"
   >("services");
@@ -240,12 +242,33 @@ export function BarbershopDetail() {
                   <p className="text-muted-foreground font-light mb-4 text-center">
                     Ready to book your appointment?
                   </p>
-                  <Link
-                    to={`/booking?barbershop_id=${barbershop.id}`}
-                    className="block w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
-                  >
-                    Book at {barbershop.name.split(" ")[0]}
-                  </Link>
+                  {user?.role === "customer" ? (
+                    <Link
+                      to={`/booking?barbershop_id=${barbershop.id}`}
+                      className="block w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                    >
+                      Book at {barbershop.name.split(" ")[0]}
+                    </Link>
+                  ) : user?.role === "barbershop" ? (
+                    <div className="text-center">
+                      <button
+                        disabled
+                        className="block w-full px-6 py-4 bg-muted-foreground/30 text-muted-foreground rounded-lg text-center font-bold cursor-not-allowed"
+                      >
+                        Barbershop accounts cannot book
+                      </button>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Switch to a customer account to make bookings.
+                      </p>
+                    </div>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="block w-full px-6 py-4 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                    >
+                      Login to Book
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -327,12 +350,29 @@ export function BarbershopDetail() {
                         <p className="text-muted-foreground font-light leading-relaxed mb-6 flex-grow line-clamp-2">
                           {service.description}
                         </p>
-                        <Link
-                          to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
-                          className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
-                        >
-                          Book Now
-                        </Link>
+                        {user?.role === "customer" ? (
+                          <Link
+                            to={`/booking?barbershop_id=${barbershop.id}&service_id=${service.id}`}
+                            className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                          >
+                            Book Now
+                          </Link>
+                        ) : user?.role === "barbershop" ? (
+                          <button
+                            disabled
+                            className="block w-full px-6 py-3 bg-muted-foreground/30 text-muted-foreground rounded-lg text-center font-bold cursor-not-allowed"
+                            title="Barbershop accounts cannot book"
+                          >
+                            Book Now
+                          </button>
+                        ) : (
+                          <Link
+                            to="/login"
+                            className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                          >
+                            Login to Book
+                          </Link>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -363,27 +403,43 @@ export function BarbershopDetail() {
                       {capster.name}
                     </h3>
                     <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-lg">
-                    <Star className="w-3 h-3 fill-primary text-primary" />
-                    <span className="text-xs font-bold text-primary">
-                      {capster.rating
-                        ? parseFloat(
-                            String(capster.rating),
-                          ).toFixed(1)
-                        : "New"}
-                    </span>
-                    </div>                  </div>
+                      <Star className="w-3 h-3 fill-primary text-primary" />
+                      <span className="text-xs font-bold text-primary">
+                        {capster.rating
+                          ? parseFloat(String(capster.rating)).toFixed(1)
+                          : "New"}
+                      </span>
+                    </div>{" "}
+                  </div>
                   <p className="text-primary font-normal mb-1">
                     {capster.title}
                   </p>
                   <p className="text-muted-foreground font-light leading-relaxed mb-4">
                     {capster.bio}
                   </p>
-                  <Link
-                    to={`/booking?barbershop_id=${barbershop.id}&barber_id=${capster.id}`}
-                    className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
-                  >
-                    Book with {capster.name.split(" ")[0]}
-                  </Link>
+                  {user?.role === "customer" ? (
+                    <Link
+                      to={`/booking?barbershop_id=${barbershop.id}&barber_id=${capster.id}`}
+                      className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                    >
+                      Book with {capster.name.split(" ")[0]}
+                    </Link>
+                  ) : user?.role === "barbershop" ? (
+                    <button
+                      disabled
+                      className="block w-full px-6 py-3 bg-muted-foreground/30 text-muted-foreground rounded-lg text-center font-bold cursor-not-allowed"
+                      title="Barbershop accounts cannot book"
+                    >
+                      Book with {capster.name.split(" ")[0]}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="block w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg text-center font-bold hover:bg-primary/90 transition-colors"
+                    >
+                      Login to Book
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

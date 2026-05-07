@@ -13,6 +13,7 @@ export interface Barbershop {
   latitude: string;
   longitude: string;
   coverImage: string;
+  balance: number;
   created_at: Date;
   updated_at: Date;
   ratings_avg_rating?: number | null;

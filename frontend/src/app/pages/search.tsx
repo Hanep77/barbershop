@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search as SearchIcon,
   MapPin,
@@ -15,6 +15,30 @@ export function Search() {
   const [showFilters, setShowFilters] = useState(false);
   const { barbershops, fetchBarbershops, loading } = useBarbershopStore();
 
+  // Debounced search handler
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        loadBarbershops();
+      }
+    }, 500); // 500ms debounce
+
+    const loadBarbershops = async () => {
+      try {
+        await fetchBarbershops(searchQuery || undefined);
+      } catch (err) {
+        console.error("Error in loadBarbershops:", err);
+      }
+    };
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, fetchBarbershops]);
+
+  // Initial load
   useEffect(() => {
     let isMounted = true;
 
@@ -26,23 +50,27 @@ export function Search() {
       }
     };
 
-    loadBarbershops();
+    if (isMounted) {
+      loadBarbershops();
+    }
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Simple client-side filtering for now
+  // Client-side filtering for location (since backend doesn't support it yet)
   const results = barbershops.filter((shop) => {
-    const matchesQuery = shop.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
     const matchesLocation = (shop.address || "")
       .toLowerCase()
       .includes(locationQuery.toLowerCase());
-    return matchesQuery && matchesLocation;
+    return matchesLocation;
   });
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setLocationQuery("");
+  };
 
   return (
     <div className="min-h-screen py-16">
@@ -92,10 +120,7 @@ export function Search() {
                 <h3 className="font-bold text-card-foreground">Filters</h3>
                 <button
                   className="text-primary text-sm font-normal hover:text-primary/80"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setLocationQuery("");
-                  }}
+                  onClick={handleClearFilters}
                 >
                   Clear All
                 </button>

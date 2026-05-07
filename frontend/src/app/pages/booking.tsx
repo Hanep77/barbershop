@@ -14,6 +14,7 @@ import { getBarbershopById } from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
 import { createBooking, getAvailableSlots } from "../../services/booking";
+import useAuthStore from "../../store/authStore";
 import type { Barbershop } from "../../types/barbershop";
 import type { Service } from "../../types/services";
 import type { Capster } from "../../types/capster";
@@ -29,11 +30,19 @@ const formatDateParam = (date: Date) => {
 
 export function Booking() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [searchParams] = useSearchParams();
 
   const barbershopId = searchParams.get("barbershop_id") || "";
   const preSelectedServiceId = searchParams.get("service_id") || "";
   const preSelectedBarberId = searchParams.get("barber_id") || "";
+
+  // Validate user role - only customers can access this page
+  useEffect(() => {
+    if (user && user.role !== "customer") {
+      navigate("/admin/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const [step, setStep] = useState(1);
   const [selectedServiceId, setSelectedServiceId] =

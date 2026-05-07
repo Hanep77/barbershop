@@ -6,6 +6,7 @@ import { createRating } from "../../services/rating";
 import type { Booking } from "../../types/booking";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
+import { AxiosError } from "axios";
 
 export function MyBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -19,7 +20,9 @@ export function MyBookings() {
       try {
         const res = await getUserBookings();
         if (!isMounted) return;
-        setBookings(res.data.data);
+        const { data } = res.data;
+        console.log(data);
+        setBookings(data);
       } catch (err) {
         console.error("Error in fetchBookings:", err);
       } finally {
@@ -72,6 +75,11 @@ export function MyBookings() {
         console.error("Error refetching bookings:", err);
       }
     } catch (err: any) {
+      if (err instanceof AxiosError) {
+        toast.error(err.response?.data?.message || "Failed to submit review");
+        console.log(err.response?.data);
+        return;
+      }
       console.error("Error in handleSubmitReview:", err);
       toast.error(err.response?.data?.message || "Failed to submit review");
     } finally {
@@ -297,7 +305,7 @@ export function MyBookings() {
                       >
                         View Barbershop
                       </Link>
-                      {booking.status === "completed" && (
+                      {booking.status === "completed" && !booking?.rating && (
                         <button
                           onClick={() => handleOpenReviewModal(booking)}
                           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"

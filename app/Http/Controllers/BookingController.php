@@ -85,7 +85,7 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
-        $bookings = Booking::with(['barbershop', 'service', 'capster'])
+        $bookings = Booking::with(['barbershop', 'service', 'capster', 'rating'])
             ->where('user_id', $request->user()->id)
             ->orderBy('booking_date', 'desc')
             ->orderBy('booking_time', 'desc')
@@ -124,7 +124,7 @@ class BookingController extends Controller
         ]);
 
         $booking->update($validated);
-        
+
         // Notify customer about status change
         $booking->load(['user', 'barbershop', 'service']);
         NotificationService::notifyBookingStatusUpdated($booking);
@@ -145,6 +145,12 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         try {
+            // CRITICAL: Only customer role can create bookings
+            if ($request->user()->role !== 'customer') {
+                return response()->json([
+                    'message' => 'Akun barbershop tidak dapat membuat reservasi.'
+                ], 403);
+            }
 
             $validated = $request->validate([
                 'barbershop_id' => 'required|exists:barbershops,id',
@@ -193,7 +199,7 @@ class BookingController extends Controller
             }
 
             // 3. HITUNG REFUND BERDASARKAN ATURAN WAKTU
-            $bookingDateTime = Carbon::parse($booking->booking_time);
+            $bookingDateTime = $this->dateTimeFromDateAndTime($booking->booking_date, $booking->booking_time);
             $hoursDiff = now()->diffInHours($bookingDateTime, false);
 
             $refundAmount = 0;
@@ -244,7 +250,7 @@ class BookingController extends Controller
                 }
 
                 $booking->update($bookingData);
-                
+
                 // Notify both parties about cancellation
                 $booking->load(['user', 'barbershop.user', 'service']);
                 NotificationService::notifyCancellation($booking, 'customer');
@@ -253,6 +259,86 @@ class BookingController extends Controller
 
                 return response()->json([
                     'message' => 'Booking cancelled successfully',
+                    'refund_amount' => $refundAmount,
+                    'refund_status' => $bookingData['refund_status']
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error cancelling booking', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function cancelBookingByBarbershop(Request $request, Booking $booking)
+    {
+        try {
+            // 1. VALIDASI OWNERSHIP - BARBERSHOP HARUS MILIK USER
+            $barbershop = $request->user()->barbershop;
+            if (!$barbershop || $booking->barbershop_id !== $barbershop->id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            // 2. VALIDASI STATUS BOOKING - HANYA PENDING/CONFIRMED YANG BISA DIBATALKAN
+            if (!in_array($booking->status, ['pending', 'confirmed'])) {
+                return response()->json(['message' => 'Cannot cancel this booking'], 400);
+            }
+
+            // 3. BARBERSHOP CANCEL = 100% REFUND
+            $payment = $booking->payment;
+            $refundAmount = $payment?->amount ?? 0;
+
+            // 4. GUNAKAN DB TRANSACTION
+            DB::beginTransaction();
+            try {
+                // 5. UPDATE BOOKING STATUS
+                $bookingData = [
+                    'status' => 'cancelled',
+                    'refund_amount' => $refundAmount,
+                    'cancellation_reason' => 'cancelled by barbershop',
+                ];
+
+                if ($refundAmount > 0) {
+                    $bookingData['refund_status'] = 'pending';
+
+                    // 6. REQUEST REFUND KE XENDIT (jika ada payment)
+                    if ($payment && $payment->transaction_id) {
+                        try {
+                            $xenditService = new \App\Services\XenditService();
+                            $refundResponse = $xenditService->refundInvoice(
+                                $payment->transaction_id,
+                                $refundAmount
+                            );
+
+                            // Jika refund request sukses, set refund_status ke pending
+                            if ($refundResponse && isset($refundResponse['status'])) {
+                                $bookingData['refund_status'] = 'pending';
+                            } else {
+                                // Jika gagal request, set ke failed
+                                $bookingData['refund_status'] = 'failed';
+                            }
+                        } catch (\Exception $refundError) {
+                            // Jika error request ke Xendit, set ke failed
+                            $bookingData['refund_status'] = 'failed';
+                            Log::error('Refund request error for barbershop cancel', ['error' => $refundError->getMessage()]);
+                        }
+                    }
+                } else {
+                    $bookingData['refund_status'] = 'none';
+                }
+
+                $booking->update($bookingData);
+
+                // Notify customer about cancellation by barbershop
+                $booking->load(['user', 'barbershop.user', 'service']);
+                NotificationService::notifyCancellationByBarbershop($booking);
+
+                DB::commit();
+
+                return response()->json([
+                    'message' => 'Booking cancelled successfully',
+                    'booking_status' => 'cancelled',
                     'refund_amount' => $refundAmount,
                     'refund_status' => $bookingData['refund_status']
                 ], 200);

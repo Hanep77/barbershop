@@ -20,8 +20,9 @@ export const updateBarbershop = async (data: UpdateBarbershopInput) => {
   return api.put("/api/partner/barbershop", data);
 };
 
-export const getAllBarbershop = async () => {
-  const barber = await api.get("/api/barbershop");
+export const getAllBarbershop = async (search?: string) => {
+  const params = search ? { search } : {};
+  const barber = await api.get("/api/barbershop", { params });
   return barber;
 };
 

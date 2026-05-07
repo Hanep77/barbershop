@@ -8,13 +8,22 @@ use Illuminate\Support\Facades\Gate;
 
 class BarbershopController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $barbershops = Barbershop::query()
+        $query = Barbershop::query();
+
+        // Support pencarian berdasarkan nama
+        $search = $request->query('search');
+        if ($search) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $barbershops = $query
             ->withAvg('ratings', 'rating')
             ->withCount('ratings')
             ->withMin('services', 'price')
             ->get();
+
         return response()->json($barbershops, 200);
     }
 

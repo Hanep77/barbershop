@@ -33,6 +33,7 @@ Route::get("/barbershop/{barbershop}/available-slots", [BookingController::class
 Route::get("/barbershop/{barbershop}/ratings", [RatingController::class, "index"]);
 Route::post('/payments/webhook/xendit', [PaymentController::class, 'webhook']);
 Route::post('/xendit/refund-webhook', [PaymentController::class, 'handleRefundWebhook']);
+Route::post('/withdrawals/webhook/xendit', [PaymentController::class, 'handleWithdrawalWebhook']);
 
 Route::middleware("auth:sanctum")->group(function () {
     Route::post("/user", [UserController::class, "me"]);
@@ -71,6 +72,7 @@ Route::middleware("auth:sanctum")->group(function () {
 
             Route::get('/bookings', [BookingController::class, 'partnerIndex']);
             Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus']);
+            Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancelBookingByBarbershop']);
 
             Route::get('/withdrawals', [WithdrawalController::class, 'index']);
             Route::post('/withdrawals', [WithdrawalController::class, 'store']);
