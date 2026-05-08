@@ -34,14 +34,14 @@ class Withdrawal extends Model
 
     // Bank name to Xendit bank code mapping
     private static $bankCodeMap = [
-        'BCA' => 'BCA',
-        'MANDIRI' => 'MANDIRI',
-        'BNI' => 'BNI',
-        'BRI' => 'BRI',
-        'CIMB' => 'CIMB',
-        'OCBC' => 'OCBC',
-        'PERMATA' => 'PERMATA',
-        'DANAMON' => 'DANAMON',
+        'BCA' => 'ID_BCA',
+        'MANDIRI' => 'ID_MANDIRI',
+        'BNI' => 'ID_BNI',
+        'BRI' => 'ID_BRI',
+        'CIMB' => 'ID_CIMB',
+        'OCBC' => 'ID_OCBC',
+        'PERMATA' => 'ID_PERMATA',
+        'DANAMON' => 'ID_DANAMON',
     ];
 
     public static function getBankCode(string $bankName): ?string

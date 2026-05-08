@@ -77,24 +77,33 @@ class XenditService
         }
     }
 
-    public function createPayout(array $data)
+    public function createPayout(array $data, string $idempotencyKey)
     {
         try {
             $body = Http::withBasicAuth($this->apiKey, '')
+                ->withHeaders([
+                    'idempotency-key' => $idempotencyKey,
+                ])
                 ->acceptJson()
                 ->asJson()
                 ->post($this->baseUrl . '/v2/payouts', $data)
                 ->throw()
                 ->json();
 
-            Log::info('Xendit Payout Created', ['payout_id' => $body['id'] ?? null, 'data' => $data]);
+            Log::info('Xendit Payout Created', [
+                'payout_id' => $body['id'] ?? null,
+                'idempotency_key' => $idempotencyKey,
+                'data' => $data,
+            ]);
 
             return $body;
         } catch (RequestException $e) {
             Log::error('Xendit Payout Creation Failed', [
                 'error' => $e->getMessage(),
+                'idempotency_key' => $idempotencyKey,
                 'data' => $data,
             ]);
+
             throw $e;
         }
     }
