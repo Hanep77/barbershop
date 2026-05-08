@@ -41,14 +41,15 @@ export function AdminWithdraw() {
 
       const barbershop = barbershopRes.data.barbershop;
 
-      console.log(barbershop);
-
       if (barbershop) {
         setBalance(barbershop.balance || 0);
       }
 
       // Fetch withdrawals history
       const withdrawalsRes = await getWithdrawals();
+
+      console.log(withdrawalsRes.data.data);
+
       if (withdrawalsRes.data.data) {
         setWithdrawals(withdrawalsRes.data.data);
       }
@@ -134,13 +135,14 @@ export function AdminWithdraw() {
       // Reload data
       await loadWithdrawalData();
     } catch (err) {
-      console.error("Error submitting withdrawal:", err);
+      console.log(err);
       if (err instanceof AxiosError) {
         const message = err.response?.data?.message;
         toast.error(message || "Gagal mengajukan withdraw");
       } else {
         toast.error("Gagal mengajukan withdraw");
       }
+      console.error("Error submitting withdrawal:", err);
     } finally {
       setSubmitting(false);
     }
@@ -222,7 +224,7 @@ export function AdminWithdraw() {
                   onChange={(e) =>
                     setFormData({ ...formData, amount: e.target.value })
                   }
-                  className={errors.amount ? "border-red-500" : ""}
+                  className={`text-foreground ${errors.amount ? "border-red-500" : ""}`}
                 />
                 {errors.amount && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
@@ -240,7 +242,7 @@ export function AdminWithdraw() {
                   onChange={(e) =>
                     setFormData({ ...formData, bank_name: e.target.value })
                   }
-                  className={errors.bank_name ? "border-red-500" : ""}
+                  className={`text-foreground ${errors.bank_name ? "border-red-500" : ""}`}
                 />
                 {errors.bank_name && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
@@ -258,7 +260,7 @@ export function AdminWithdraw() {
                   onChange={(e) =>
                     setFormData({ ...formData, account_name: e.target.value })
                   }
-                  className={errors.account_name ? "border-red-500" : ""}
+                  className={`text-foreground ${errors.account_name ? "border-red-500" : ""}`}
                 />
                 {errors.account_name && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
@@ -276,7 +278,7 @@ export function AdminWithdraw() {
                   onChange={(e) =>
                     setFormData({ ...formData, account_number: e.target.value })
                   }
-                  className={errors.account_number ? "border-red-500" : ""}
+                  className={`text-foreground ${errors.account_number ? "border-red-500" : ""}`}
                 />
                 {errors.account_number && (
                   <p className="text-xs text-red-500 flex items-center gap-1">

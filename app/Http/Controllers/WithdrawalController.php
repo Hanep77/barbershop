@@ -17,6 +17,10 @@ class WithdrawalController extends Controller
 {
     protected $xenditService;
 
+    private const XENDIT_FINAL_SUCCESS_STATUSES = ['SUCCEEDED', 'SUCCESS', 'COMPLETED'];
+    private const XENDIT_FINAL_FAILED_STATUSES = ['FAILED', 'CANCELLED', 'REJECTED'];
+    private const XENDIT_PENDING_STATUSES = ['ACCEPTED', 'PENDING', 'PROCESSING'];
+
     public function __construct(XenditService $xenditService)
     {
         $this->xenditService = $xenditService;
@@ -24,19 +28,20 @@ class WithdrawalController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $barbershop = $request->user()?->barbershop;
 
-        $barbershop->load('withdrawals');
-
-        if (! $barbershop) {
+        if (! $request->user()?->barbershop) {
             return response()->json([
                 'message' => 'Barbershop tidak ditemukan',
             ], 404);
         }
 
+        $withdrawals = Withdrawal::where('barbershop_id', $request->user()?->barbershop?->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return response()->json([
             'message' => 'Riwayat withdraw berhasil diambil',
-            'data' => $barbershop,
+            'data' => $withdrawals,
         ]);
     }
 
@@ -98,20 +103,27 @@ class WithdrawalController extends Controller
                 'external_id' => $externalId,
             ]);
 
-            // Siapkan payload untuk Xendit payout
+            // Siapkan payload untuk Xendit payout v2
             $payoutPayload = [
                 'reference_id' => $externalId,
-                'currency' => 'IDR',
+                'channel_code' => $bankCode,
+                'channel_properties' => [
+                    'account_number' => $request->account_number,
+                    'account_holder_name' => $request->account_name,
+                ],
                 'amount' => (int) $amount,
-                'bank_code' => $bankCode,
-                'account_holder_name' => $request->account_name,
-                'account_number' => $request->account_number,
                 'description' => 'Withdrawal from ' . $barbershop->name,
+                'currency' => 'IDR',
+                'metadata' => [
+                    'withdrawal_external_id' => $externalId,
+                    'barbershop_id' => $barbershop->id,
+                    'barbershop_name' => $barbershop->name,
+                ],
             ];
 
             // Buat payout di Xendit
             try {
-                $response = $this->xenditService->createPayout($payoutPayload);
+                $response = $this->xenditService->createPayout($payoutPayload, $externalId);
 
                 // Simpan response dari Xendit
                 $withdrawal->update([
@@ -177,5 +189,194 @@ class WithdrawalController extends Controller
                 'status' => 'pending',
             ], 201);
         }
+    }
+
+    public function updateBalanceViaWebhook(Request $request)
+    {
+        $payload = $request->all();
+        $callbackToken = $request->header('x-callback-token') ?? $request->header('X-CALLBACK-TOKEN');
+        $expectedToken = config('services.xendit.webhook_token');
+
+        Log::info('Received Xendit Withdrawal Webhook', [
+            'reference_id' => data_get($payload, 'data.reference_id', data_get($payload, 'reference_id')),
+            'has_data_wrapper' => array_key_exists('data', $payload),
+        ]);
+
+        if (! $expectedToken || ! $callbackToken || ! hash_equals($expectedToken, $callbackToken)) {
+            Log::warning('Invalid Xendit Withdrawal Webhook token', [
+                'token_present' => (bool) $callbackToken,
+                'token_valid' => false,
+            ]);
+
+            return response()->json(['message' => 'Invalid webhook token'], 403);
+        }
+
+        Log::info('Xendit Withdrawal Webhook token validated', [
+            'token_present' => true,
+            'token_valid' => true,
+        ]);
+
+        $payout = $payload['data'] ?? $payload;
+        $status = strtoupper((string) ($payout['status'] ?? ''));
+        $referenceId = $payout['reference_id'] ?? null;
+        $metadataExternalId = data_get($payout, 'metadata.withdrawal_external_id');
+        $payoutId = $payout['id'] ?? null;
+
+        $withdrawal = $this->findWithdrawalForWebhook($referenceId, $metadataExternalId, $payoutId);
+
+        Log::info('Xendit Withdrawal Webhook lookup result', [
+            'reference_id' => $referenceId,
+            'withdrawal_found' => (bool) $withdrawal,
+            'status' => $status,
+        ]);
+
+        if (! $withdrawal) {
+            return response()->json(['message' => 'Withdrawal not found'], 404);
+        }
+
+        $responseMessage = 'Webhook processed';
+
+        DB::transaction(function () use ($withdrawal, $payout, $status, &$responseMessage) {
+            $withdrawal = Withdrawal::where('id', $withdrawal->id)->lockForUpdate()->first();
+
+            if (! $withdrawal) {
+                $responseMessage = 'Withdrawal not found';
+                return;
+            }
+
+            $barbershop = Barbershop::where('id', $withdrawal->barbershop_id)->lockForUpdate()->first();
+
+            if (! $barbershop) {
+                Log::warning('Barbershop not found for withdrawal webhook', [
+                    'withdrawal_id' => $withdrawal->id,
+                    'barbershop_id' => $withdrawal->barbershop_id,
+                ]);
+
+                $responseMessage = 'Barbershop not found';
+                return;
+            }
+
+            $previousStatus = $withdrawal->status;
+            $finalStatus = null;
+            $failureReason = data_get($payout, 'failure_reason') ?? data_get($payout, 'failure_message');
+            $failureCode = data_get($payout, 'failure_code');
+
+            if (in_array($status, self::XENDIT_FINAL_SUCCESS_STATUSES, true)) {
+                $finalStatus = 'success';
+            } elseif (in_array($status, self::XENDIT_FINAL_FAILED_STATUSES, true)) {
+                $finalStatus = 'failed';
+            } elseif (in_array($status, self::XENDIT_PENDING_STATUSES, true)) {
+                $finalStatus = 'pending';
+            }
+
+            Log::info('Xendit Withdrawal Webhook status transition', [
+                'withdrawal_id' => $withdrawal->id,
+                'previous_status' => $previousStatus,
+                'new_status' => $finalStatus,
+            ]);
+
+            if ($finalStatus === 'success') {
+                if ($previousStatus === 'success') {
+                    Log::info('Xendit Withdrawal Webhook already processed', [
+                        'withdrawal_id' => $withdrawal->id,
+                    ]);
+
+                    $responseMessage = 'Webhook already processed';
+                    return;
+                }
+
+                $balanceBefore = (float) $barbershop->balance;
+
+                $withdrawal->update([
+                    'status' => 'success',
+                    'xendit_status' => $status,
+                    'processed_at' => now(),
+                    'webhook_payload' => $payout,
+                ]);
+
+                $barbershop->decrement('balance', $withdrawal->amount);
+                $barbershop->refresh();
+
+                Log::info('Xendit Withdrawal Webhook balance updated', [
+                    'withdrawal_id' => $withdrawal->id,
+                    'balance_before' => $balanceBefore,
+                    'balance_after' => (float) $barbershop->balance,
+                ]);
+
+                NotificationService::send(
+                    $barbershop->user,
+                    'Withdraw Berhasil!',
+                    'Withdraw sebesar IDR ' . number_format($withdrawal->amount, 0, ',', '.') . ' telah berhasil diproses.',
+                    'withdraw_success'
+                );
+
+                $responseMessage = 'Withdrawal marked as success';
+                return;
+            }
+
+            if ($finalStatus === 'failed') {
+                if ($previousStatus === 'failed') {
+                    Log::info('Xendit Withdrawal Webhook already processed', [
+                        'withdrawal_id' => $withdrawal->id,
+                    ]);
+
+                    $responseMessage = 'Webhook already processed';
+                    return;
+                }
+
+                $withdrawal->update([
+                    'status' => 'failed',
+                    'xendit_status' => $status,
+                    'failure_code' => $failureCode,
+                    'failure_reason' => $failureReason ?: 'Xendit status: ' . $status,
+                    'processed_at' => now(),
+                    'webhook_payload' => $payout,
+                ]);
+
+                NotificationService::send(
+                    $barbershop->user,
+                    'Withdraw Gagal',
+                    'Withdraw sebesar IDR ' . number_format($withdrawal->amount, 0, ',', '.') . ' gagal diproses. Status dari Xendit: ' . $status,
+                    'withdraw_failed'
+                );
+
+                $responseMessage = 'Withdrawal marked as failed';
+                return;
+            }
+
+            $withdrawal->update([
+                'xendit_status' => $status ?: $withdrawal->xendit_status,
+                'webhook_payload' => $payout,
+            ]);
+
+            $responseMessage = 'Withdrawal kept pending';
+        });
+
+        return response()->json(['message' => $responseMessage], 200);
+    }
+
+    private function findWithdrawalForWebhook(?string $referenceId, ?string $metadataExternalId, ?string $payoutId): ?Withdrawal
+    {
+        if ($referenceId) {
+            $withdrawal = Withdrawal::where('external_id', $referenceId)->first();
+
+            if ($withdrawal) {
+                return $withdrawal;
+            }
+        }
+
+        if ($metadataExternalId) {
+            $withdrawal = Withdrawal::where('external_id', $metadataExternalId)->first();
+
+            if ($withdrawal) {
+                return $withdrawal;
+            }
+        }
+
+        if ($payoutId) {
+            return Withdrawal::where('xendit_disbursement_id', $payoutId)->first();
+        }
+
+        return null;
     }
 }
