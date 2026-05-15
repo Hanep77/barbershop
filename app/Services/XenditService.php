@@ -48,30 +48,54 @@ class XenditService
         return hash_equals($webhookToken, $callbackToken);
     }
 
-    public function refundInvoice(string $invoiceId, float $amount)
+    public function refundInvoice(string $invoiceId, float $amount, ?string $paymentId = null)
     {
         try {
-            $body = Http::withBasicAuth($this->apiKey, '')
+            $payload = [
+                'amount' => (int) $amount,
+                'reason' => 'REQUESTED_BY_CUSTOMER',
+            ];
+
+            // Use unified refunds API if paymentId is available
+            if ($paymentId) {
+                $payload['invoice_id'] = $invoiceId; // Use invoice_id as the primary reference for invoice-based refunds
+                $url = $this->baseUrl . "/refunds";
+            } else {
+                // Fallback to legacy invoice refund if no paymentId
+                $url = $this->baseUrl . "/v2/invoices/{$invoiceId}/refund";
+            }
+
+            Log::info('Sending Refund Request to Xendit', [
+                'url' => $url,
+                'payload' => $payload
+            ]);
+
+            $response = Http::withBasicAuth($this->apiKey, '')
                 ->acceptJson()
                 ->asJson()
-                ->post($this->baseUrl . "/v2/invoices/{$invoiceId}/refund", [
-                    'amount' => $amount
-                ])
-                ->throw()
-                ->json();
+                ->post($url, $payload);
 
-            Log::info('Xendit Refund Requested', [
+            if ($response->failed()) {
+                Log::error('Xendit Refund Request Failed', [
+                    'status' => $response->status(),
+                    'body' => $response->json(),
+                    'invoice_id' => $invoiceId
+                ]);
+                return $response->json();
+            }
+
+            $body = $response->json();
+            Log::info('Xendit Refund Requested Successfully', [
                 'invoice_id' => $invoiceId,
                 'amount' => $amount,
                 'response' => $body
             ]);
 
             return $body;
-        } catch (RequestException $e) {
-            Log::error('Xendit Refund Request Failed', [
+        } catch (\Exception $e) {
+            Log::error('Xendit Refund Exception', [
                 'error' => $e->getMessage(),
-                'invoice_id' => $invoiceId,
-                'amount' => $amount,
+                'invoice_id' => $invoiceId
             ]);
             throw $e;
         }

@@ -80,13 +80,13 @@ const getRefundEstimate = (booking: Booking) => {
 
   const hoursRemaining =
     (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-  const refundPercent = hoursRemaining >= 2 ? 50 : 0;
+  const refundPercent = hoursRemaining >= 2 ? 100 : 0;
   const baseAmount = booking.payment?.amount ?? booking.total_price ?? 0;
 
   return {
     hoursRemaining,
     refundPercent,
-    refundAmount: refundPercent === 50 ? baseAmount * 0.5 : 0,
+    refundAmount: refundPercent === 100 ? baseAmount : 0,
   };
 };
 
@@ -231,11 +231,20 @@ export function CancelBooking() {
 
       const refundAmount = response.data?.refund_amount ?? 0;
       const refundStatus = response.data?.refund_status ?? "none";
-      const message = response.data?.message || "Booking berhasil dibatalkan.";
+      
+      if (refundStatus === "failed") {
+        toast.error(
+          "Booking dibatalkan, namun pengajuan refund otomatis gagal. Silakan hubungi admin.",
+          { duration: 5000 },
+        );
+      } else if (refundAmount > 0) {
+        toast.success(
+          `Booking berhasil dibatalkan. Estimasi refund ${formatCurrency(refundAmount)} sedang diproses.`,
+        );
+      } else {
+        toast.success("Booking berhasil dibatalkan.");
+      }
 
-      toast.success(
-        `${message} Refund: ${formatCurrency(refundAmount)} (${refundStatus}).`,
-      );
       navigate("/my-bookings", { replace: true });
     } catch (err) {
       if (err instanceof AxiosError) {
@@ -421,12 +430,12 @@ export function CancelBooking() {
                   <p>
                     Jika pembatalan dilakukan minimal 2 jam sebelum jadwal,
                     refund estimasi adalah{" "}
-                    <span className="font-semibold">50%</span>.
+                    <span className="font-semibold">100%</span>.
                   </p>
                   <p>
                     Jika pembatalan dilakukan kurang dari 2 jam sebelum jadwal,
                     refund estimasi adalah{" "}
-                    <span className="font-semibold">0%</span>.
+                    <span className="font-semibold">0% (Hangus)</span>.
                   </p>
                 </AlertDescription>
               </Alert>

@@ -188,6 +188,15 @@ class BookingController extends Controller
     public function cancelBooking(Request $request, Booking $booking)
     {
         try {
+            $booking->load('payment');
+            
+            Log::info('Attempting to cancel booking', [
+                'booking_id' => $booking->id,
+                'user_id' => $request->user()->id,
+                'current_status' => $booking->status,
+                'payment_status' => $booking->payment?->status
+            ]);
+
             // 1. VALIDASI OWNERSHIP
             if ($booking->user_id !== $request->user()->id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
@@ -203,10 +212,17 @@ class BookingController extends Controller
             $hoursDiff = now()->diffInHours($bookingDateTime, false);
 
             $refundAmount = 0;
-            if ($hoursDiff >= 2) {
-                // Refund 50% jika cancel >= 2 jam sebelum booking
-                $payment = $booking->payment;
-                $refundAmount = ($payment?->amount ?? 0) * 0.5;
+            $payment = $booking->payment;
+
+            // Refund hanya berlaku jika pembayaran sudah sukses (PAID)
+            if ($payment && $payment->status === 'success') {
+                if ($hoursDiff >= 2) {
+                    // Refund 100% jika cancel >= 2 jam sebelum booking
+                    $refundAmount = $payment->amount ?? 0;
+                } else {
+                    // Refund 0% jika cancel < 2 jam sebelum booking (hangus)
+                    $refundAmount = 0;
+                }
             }
 
             // 4. GUNAKAN DB TRANSACTION
@@ -222,31 +238,39 @@ class BookingController extends Controller
                 if ($refundAmount > 0) {
                     $bookingData['refund_status'] = 'pending';
 
-                    // 6. REQUEST REFUND KE XENDIT (jika ada payment)
-                    $payment = $booking->payment;
+                    // 6. REQUEST REFUND KE XENDIT
                     if ($payment && $payment->transaction_id) {
                         try {
                             $xenditService = new \App\Services\XenditService();
+                            Log::info('Requesting Xendit refund', [
+                                'booking_id' => $booking->id,
+                                'invoice_id' => $payment->transaction_id,
+                                'amount' => $refundAmount
+                            ]);
+                            
                             $refundResponse = $xenditService->refundInvoice(
                                 $payment->transaction_id,
-                                $refundAmount
+                                $refundAmount,
+                                $payment->xendit_payment_id // Pass the payment_id for unified refund
                             );
 
-                            // Jika refund request sukses, set refund_status ke pending
-                            if ($refundResponse && isset($refundResponse['status'])) {
+                            if ($refundResponse && (isset($refundResponse['status']) || isset($refundResponse['id']))) {
+                                Log::info('Xendit refund request accepted', ['response' => $refundResponse]);
                                 $bookingData['refund_status'] = 'pending';
                             } else {
-                                // Jika gagal request, set ke failed
+                                Log::warning('Xendit refund response invalid', ['response' => $refundResponse]);
                                 $bookingData['refund_status'] = 'failed';
                             }
                         } catch (\Exception $refundError) {
-                            // Jika error request ke Xendit, set ke failed
                             $bookingData['refund_status'] = 'failed';
-                            Log::error('Refund request error', ['error' => $refundError->getMessage()]);
+                            Log::error('Xendit refund exception', [
+                                'booking_id' => $booking->id,
+                                'error' => $refundError->getMessage()
+                            ]);
                         }
                     }
                 } else {
-                    $bookingData['refund_status'] = 'none';
+                    $bookingData['refund_status'] = ($payment && $payment->status === 'success') ? 'none' : 'none';
                 }
 
                 $booking->update($bookingData);
@@ -260,10 +284,12 @@ class BookingController extends Controller
                 return response()->json([
                     'message' => 'Booking cancelled successfully',
                     'refund_amount' => $refundAmount,
-                    'refund_status' => $bookingData['refund_status']
+                    'refund_status' => $bookingData['refund_status'],
+                    'booking' => $booking->fresh(['payment'])
                 ], 200);
             } catch (\Exception $e) {
                 DB::rollBack();
+                Log::error('Internal cancellation error', ['error' => $e->getMessage()]);
                 throw $e;
             }
         } catch (\Exception $e) {
@@ -285,9 +311,20 @@ class BookingController extends Controller
                 return response()->json(['message' => 'Cannot cancel this booking'], 400);
             }
 
-            // 3. BARBERSHOP CANCEL = 100% REFUND
+            $booking->load('payment');
             $payment = $booking->payment;
-            $refundAmount = $payment?->amount ?? 0;
+
+            Log::info('Barbershop attempting to cancel booking', [
+                'booking_id' => $booking->id,
+                'barbershop_id' => $barbershop->id,
+                'payment_status' => $payment?->status
+            ]);
+
+            // 3. BARBERSHOP CANCEL = 100% REFUND (jika sudah bayar)
+            $refundAmount = 0;
+            if ($payment && $payment->status === 'success') {
+                $refundAmount = $payment->amount ?? 0;
+            }
 
             // 4. GUNAKAN DB TRANSACTION
             DB::beginTransaction();
@@ -302,30 +339,35 @@ class BookingController extends Controller
                 if ($refundAmount > 0) {
                     $bookingData['refund_status'] = 'pending';
 
-                    // 6. REQUEST REFUND KE XENDIT (jika ada payment)
+                    // 6. REQUEST REFUND KE XENDIT
                     if ($payment && $payment->transaction_id) {
                         try {
                             $xenditService = new \App\Services\XenditService();
+                            Log::info('Requesting Xendit refund (Barbershop Cancel)', [
+                                'invoice_id' => $payment->transaction_id,
+                                'amount' => $refundAmount
+                            ]);
+
                             $refundResponse = $xenditService->refundInvoice(
                                 $payment->transaction_id,
-                                $refundAmount
+                                $refundAmount,
+                                $payment->xendit_payment_id // Pass the payment_id for unified refund
                             );
 
-                            // Jika refund request sukses, set refund_status ke pending
-                            if ($refundResponse && isset($refundResponse['status'])) {
+                            if ($refundResponse && (isset($refundResponse['status']) || isset($refundResponse['id']))) {
+                                Log::info('Xendit refund request accepted', ['response' => $refundResponse]);
                                 $bookingData['refund_status'] = 'pending';
                             } else {
-                                // Jika gagal request, set ke failed
+                                Log::warning('Xendit refund response invalid', ['response' => $refundResponse]);
                                 $bookingData['refund_status'] = 'failed';
                             }
                         } catch (\Exception $refundError) {
-                            // Jika error request ke Xendit, set ke failed
                             $bookingData['refund_status'] = 'failed';
                             Log::error('Refund request error for barbershop cancel', ['error' => $refundError->getMessage()]);
                         }
                     }
                 } else {
-                    $bookingData['refund_status'] = 'none';
+                    $bookingData['refund_status'] = ($payment && $payment->status === 'success') ? 'none' : 'none';
                 }
 
                 $booking->update($bookingData);
@@ -344,6 +386,7 @@ class BookingController extends Controller
                 ], 200);
             } catch (\Exception $e) {
                 DB::rollBack();
+                Log::error('Internal barbershop cancellation error', ['error' => $e->getMessage()]);
                 throw $e;
             }
         } catch (\Exception $e) {
@@ -351,9 +394,13 @@ class BookingController extends Controller
         }
     }
 
-    private function dateTimeFromDateAndTime(string $date, string $time): Carbon
+    private function dateTimeFromDateAndTime($date, $time): Carbon
     {
-        return Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $this->normalizeTime($time));
+        // Jika input adalah instance Carbon (karena casting), format dulu ke string yang benar
+        $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : $date;
+        $timeStr = $time instanceof \Carbon\Carbon ? $time->format('H:i:s') : $this->normalizeTime($time);
+        
+        return Carbon::createFromFormat('Y-m-d H:i:s', $dateStr . ' ' . $timeStr);
     }
 
     private function normalizeTime(string $time): string
