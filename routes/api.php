@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BarbershopController;
+use App\Http\Controllers\BarbershopImageController;
 use App\Http\Controllers\PartnerBarbershopController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceCategoryController;
@@ -25,7 +26,14 @@ Route::post("/register", [UserController::class, "register"]);
 Route::post("/login", [UserController::class, "login"]);
 
 Route::get("/barbershop", [BarbershopController::class, "index"]);
+Route::middleware(["auth:sanctum", "role:barbershop"])->group(function () {
+    Route::get("/barbershop/images", [BarbershopImageController::class, "index"]);
+    Route::post("/barbershop/images", [BarbershopImageController::class, "store"]);
+    Route::patch("/barbershop/images/{image}/set-primary", [BarbershopImageController::class, "setPrimary"]);
+    Route::delete("/barbershop/images/{image}", [BarbershopImageController::class, "destroy"]);
+});
 Route::get("/barbershop/{barbershop}", [BarbershopController::class, "show"]);
+Route::get("/barbershop/{barbershop}/images", [BarbershopImageController::class, "publicIndex"]);
 Route::get("/barbershop/{barbershop}/services", [ServiceController::class, "index"]);
 Route::get("/barbershop/{barbershop}/service-categories", [ServiceCategoryController::class, "index"]);
 Route::get("/barbershop/{barbershop}/capsters", [CapsterController::class, "index"]);

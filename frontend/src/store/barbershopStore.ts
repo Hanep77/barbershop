@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Barbershop } from "../types/barbershop";
 import { getAllBarbershop } from "../services/barbershop";
+import { AxiosError } from "axios";
 
 interface BarbershopState {
   barbershops: Barbershop[];
@@ -25,6 +26,9 @@ const useBarbershopStore = create<BarbershopState>((set) => ({
           ? ((err as any).response?.data?.message ?? err.message)
           : "Failed to fetch barbershops";
       set({ error: message });
+      if (err instanceof AxiosError) {
+        console.log(err?.response?.data);
+      }
     } finally {
       set({ loading: false });
     }

@@ -62,6 +62,16 @@ class Barbershop extends Model
         return $this->hasMany(Rating::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(BarbershopImage::class);
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(BarbershopImage::class)->where('is_primary', true);
+    }
+
     public function withdrawals()
     {
         return $this->hasMany(Withdrawal::class);

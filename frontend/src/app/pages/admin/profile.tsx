@@ -1,13 +1,36 @@
-import { useState, useEffect } from "react";
-import { Store, MapPin, Phone, Mail, Image, Save } from "lucide-react";
+import { useState, useEffect, type ChangeEvent } from "react";
+import {
+  Store,
+  MapPin,
+  Phone,
+  Mail,
+  Image,
+  Save,
+  Loader2,
+  Star,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
+import { Badge } from "../../components/ui/badge";
 import { toast } from "sonner";
-import { getBarbershop, updateBarbershop } from "../../../services/barbershop";
-import type { Barbershop } from "../../../types/barbershop";
+import {
+  deleteBarbershopImage,
+  getBarbershop,
+  getBarbershopImages,
+  getPublicAssetUrl,
+  setPrimaryBarbershopImage,
+  updateBarbershop,
+  uploadBarbershopImage,
+} from "../../../services/barbershop";
+import type {
+  Barbershop,
+  BarbershopImage,
+} from "../../../types/barbershop";
 import type { User } from "../../../types/auth";
 import { AxiosError } from "axios";
 
@@ -22,11 +45,12 @@ export function AdminProfile() {
     user: undefined,
   });
   const [isEditing, setIsEditing] = useState(false);
-  const [gallery, setGallery] = useState<string[]>([
-    "https://images.unsplash.com/photo-1759134248487-e8baaf31e33e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBtb2Rlcm58ZW58MXx8fHwxNzczODYyMjk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "https://images.unsplash.com/photo-1605497788044-5a32c7078486?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwY2hhaXJ8ZW58MXx8fHwxNzczODYyMzA2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwdG9vbHN8ZW58MXx8fHwxNzczODYyMzE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  ]);
+  const [gallery, setGallery] = useState<BarbershopImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [gallerySubmitting, setGallerySubmitting] = useState(false);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
 
   const handleSave = async () => {
     const formElement = document.getElementById(
@@ -66,15 +90,93 @@ export function AdminProfile() {
     setIsEditing(false);
   };
 
-  const handleFileUpload = () => {
-    toast.info("File upload functionality would open here");
+  const loadGallery = async () => {
+    try {
+      setGalleryLoading(true);
+      setGalleryError(null);
+      const res = await getBarbershopImages();
+      setGallery(res.data.images || []);
+    } catch (err) {
+      console.error("Failed to load gallery:", err);
+      setGalleryError("Failed to load gallery photos.");
+    } finally {
+      setGalleryLoading(false);
+    }
   };
 
-  const getBarbershopInfo = async () => {
-    const data = await getBarbershop();
-    // console.log(data);
-    const { barbershop, user } = data.data;
-    setProfile({ barbershop, user });
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedImage(file);
+    setGalleryError(null);
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    setPreviewUrl(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedImage) {
+      toast.error("Please choose a photo first.");
+      return;
+    }
+
+    try {
+      setGallerySubmitting(true);
+      setGalleryError(null);
+      await uploadBarbershopImage(selectedImage);
+      setSelectedImage(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(null);
+      await loadGallery();
+      toast.success("Photo uploaded successfully.");
+    } catch (err) {
+      const message =
+        err instanceof AxiosError
+          ? err.response?.data.message || "Failed to upload photo."
+          : "Failed to upload photo.";
+      setGalleryError(message);
+      toast.error(message);
+    } finally {
+      setGallerySubmitting(false);
+    }
+  };
+
+  const handleSetPrimary = async (id: string) => {
+    try {
+      setGallerySubmitting(true);
+      await setPrimaryBarbershopImage(id);
+      await loadGallery();
+      toast.success("Primary photo updated.");
+    } catch (err) {
+      const message =
+        err instanceof AxiosError
+          ? err.response?.data.message || "Failed to update primary photo."
+          : "Failed to update primary photo.";
+      toast.error(message);
+    } finally {
+      setGallerySubmitting(false);
+    }
+  };
+
+  const handleDeleteImage = async (id: string) => {
+    try {
+      setGallerySubmitting(true);
+      await deleteBarbershopImage(id);
+      await loadGallery();
+      toast.success("Photo deleted successfully.");
+    } catch (err) {
+      const message =
+        err instanceof AxiosError
+          ? err.response?.data.message || "Failed to delete photo."
+          : "Failed to delete photo.";
+      toast.error(message);
+    } finally {
+      setGallerySubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -92,11 +194,20 @@ export function AdminProfile() {
     };
 
     loadBarbershopInfo();
+    loadGallery();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,56 +415,115 @@ export function AdminProfile() {
                     services
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleFileUpload}
-                  disabled={!isEditing}
-                >
-                  <Image className="w-4 h-4 mr-2" />
-                  Upload Photos
-                </Button>
               </div>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {gallery.map((image, index) => (
-                  <div
-                    key={index}
-                    className="relative aspect-video rounded-lg overflow-hidden bg-muted group"
+            <div className="p-6 space-y-6">
+              {isEditing && (
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="gallery-photo">Upload Photo</Label>
+                    <Input
+                      id="gallery-photo"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleFileChange}
+                      disabled={gallerySubmitting}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG, or WebP. Maximum file size is 2 MB.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={!selectedImage || gallerySubmitting}
                   >
+                    {gallerySubmitting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 mr-2" />
+                    )}
+                    Upload
+                  </Button>
+                </div>
+              )}
+
+              {previewUrl && (
+                <div className="max-w-sm">
+                  <Label>Preview</Label>
+                  <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-muted">
                     <img
-                      src={image}
-                      alt={`Gallery ${index + 1}`}
+                      src={previewUrl}
+                      alt="Preview upload"
                       className="w-full h-full object-cover"
                     />
-                    {isEditing && (
-                      <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() =>
-                            setGallery(gallery.filter((_, i) => i !== index))
-                          }
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    )}
                   </div>
-                ))}
-                {isEditing && (
-                  <button
-                    onClick={handleFileUpload}
-                    className="aspect-video rounded-lg border-2 border-dashed border-border bg-muted hover:bg-muted/80 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Image className="w-8 h-8" />
-                    <span className="text-sm">Add Photo</span>
-                  </button>
-                )}
-              </div>
+                </div>
+              )}
+
+              {galleryError && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {galleryError}
+                </div>
+              )}
+
+              {galleryLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading gallery photos...
+                </div>
+              ) : gallery.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-8 text-center text-sm text-muted-foreground">
+                  No gallery photos yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {gallery.map((image, index) => (
+                    <div
+                      key={image.id}
+                      className="relative aspect-video rounded-lg overflow-hidden bg-muted group"
+                    >
+                      <img
+                        src={getPublicAssetUrl(image.image_url)}
+                        alt={`Gallery ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {image.is_primary && (
+                        <Badge className="absolute left-3 top-3">
+                          <Star className="w-3 h-3" />
+                          Foto Utama
+                        </Badge>
+                      )}
+                      {isEditing && (
+                        <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          {!image.is_primary && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSetPrimary(image.id)}
+                              disabled={gallerySubmitting}
+                            >
+                              <Star className="w-4 h-4 mr-2" />
+                              Jadikan Utama
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteImage(image.id)}
+                            disabled={gallerySubmitting}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Hapus
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-4">
-                💡 <strong>Tip:</strong> These photos will be shown on your
-                public barbershop profile to attract customers.
+                These photos will be shown on your public barbershop profile to
+                attract customers.
               </p>
             </div>
           </Card>
