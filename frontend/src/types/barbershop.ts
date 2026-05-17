@@ -24,6 +24,17 @@ export interface Barbershop {
   close_time?: string;
   capsters?: Capster[];
   services?: Service[];
+  images?: BarbershopImage[];
+  primary_image?: BarbershopImage | null;
+}
+
+export interface BarbershopImage {
+  id: string;
+  barbershop_id: string;
+  image_url: string;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export type CreateBarbershopInput = Omit<

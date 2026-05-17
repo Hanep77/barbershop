@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { getBarbershopById } from "../../services/barbershop";
+import {
+  getBarbershopById,
+  getPublicAssetUrl,
+} from "../../services/barbershop";
 import { getServicesByBarbershopId } from "../../services/service";
 import { getCapstersByBarbershopId } from "../../services/capster";
 import { getServiceCategoriesByBarbershop } from "../../services/serviceCategory";
@@ -124,6 +127,15 @@ export function BarbershopDetail() {
           ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length
         ).toFixed(1)
       : "New";
+  const galleryImages = barbershop.images || [];
+  const primaryImage =
+    galleryImages.find((image) => image.is_primary) ||
+    barbershop.primary_image ||
+    galleryImages[0] ||
+    null;
+  const coverImage = primaryImage
+    ? getPublicAssetUrl(primaryImage.image_url)
+    : getPublicAssetUrl(barbershop.coverImage);
 
   // Helper to format currency
   const formatPrice = (price: number) => {
@@ -154,7 +166,7 @@ export function BarbershopDetail() {
         {/* Cover Image */}
         <div className="relative h-[400px] overflow-hidden bg-muted">
           <ImageWithFallback
-            src={barbershop.coverImage}
+            src={coverImage}
             alt={barbershop.name}
             className="w-full h-full object-cover"
           />
@@ -276,8 +288,46 @@ export function BarbershopDetail() {
         </div>
       </section>
 
-      {/* Tabs Section */}
+      {/* Gallery Section */}
       <section className="container mx-auto px-6 py-12">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-foreground">Gallery</h2>
+        </div>
+        {galleryImages.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {galleryImages.map((image, index) => (
+              <div
+                key={image.id}
+                className={`relative overflow-hidden rounded-xl bg-muted ${
+                  index === 0 ? "col-span-2 row-span-2 aspect-video md:aspect-auto" : "aspect-square"
+                }`}
+              >
+                <ImageWithFallback
+                  src={getPublicAssetUrl(image.image_url)}
+                  alt={`${barbershop.name} gallery ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                {image.is_primary && (
+                  <div className="absolute left-3 top-3 rounded-md bg-background/90 px-2 py-1 text-xs font-bold text-foreground">
+                    Foto Utama
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="relative h-64 overflow-hidden rounded-xl bg-muted">
+            <ImageWithFallback
+              src={coverImage}
+              alt={barbershop.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+      </section>
+
+      {/* Tabs Section */}
+      <section className="container mx-auto px-6 pb-12">
         {/* Tab Navigation */}
         <div className="flex gap-4 border-b border-border mb-8">
           <button

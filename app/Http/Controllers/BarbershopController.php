@@ -24,6 +24,9 @@ class BarbershopController extends Controller
             ->withMin('services', 'price')
             ->get();
 
+
+        $barbershops->load('images');
+
         return response()->json($barbershops, 200);
     }
 
@@ -65,7 +68,12 @@ class BarbershopController extends Controller
 
     public function show(Barbershop $barbershop)
     {
-        return response()->json($barbershop->load(["services", "capsters"])->loadAvg('ratings', 'rating')->loadCount(['ratings', 'capsters'])->loadMin('services', 'price'));
+        return response()->json($barbershop->load([
+            "services",
+            "capsters",
+            "primaryImage",
+            "images" => fn($query) => $query->orderByDesc('is_primary')->latest(),
+        ])->loadAvg('ratings', 'rating')->loadCount(['ratings', 'capsters'])->loadMin('services', 'price'));
     }
 
     public function update(Request $request, Barbershop $barbershop)
