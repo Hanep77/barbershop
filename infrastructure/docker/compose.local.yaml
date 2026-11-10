@@ -1,0 +1,44 @@
+# Local development overlay.
+#
+# Adds a PostgreSQL container and publishes Traefik on 8080 (the host may
+# already own port 80). For a real deployment use compose.yaml
+# (+ compose.production.yaml) and point DB_HOST at your PostgreSQL server.
+#
+#   docker compose --project-directory . \
+#     -f infrastructure/docker/compose.yaml \
+#     -f infrastructure/docker/compose.local.yaml up -d --build
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sh:/docker-entrypoint-initdb.d/10-provision.sh:ro
+    secrets:
+      - db_password_identity
+      - db_password_catalog
+      - db_password_booking
+      - db_password_payment
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  traefik:
+    ports: !override
+      - "8080:80"
+
+volumes:
+  postgres_data:

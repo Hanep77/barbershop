@@ -1,0 +1,23 @@
+entryPoints:
+  web:
+    address: ":80"
+
+api:
+  dashboard: false
+
+ping:
+  entryPoint: web
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+  docker:
+    endpoint: "tcp://docker-socket-proxy:2375"
+    exposedByDefault: false
+    network: edge
+
+log:
+  level: INFO
+
+accessLog: {}

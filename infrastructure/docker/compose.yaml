@@ -1,0 +1,510 @@
+name: barberbrody
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app-env: &app-env
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: ${PUBLIC_URL:-http://localhost}
+  LOG_CHANNEL: stderr
+  LOG_LEVEL: info
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  REDIS_CLIENT: phpredis
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: "null"
+  INTERNAL_SERVICE_TOKEN_FILE: /run/secrets/internal_token
+  INTERNAL_SERVICE_TIMEOUT: "5"
+  DB_SSLMODE: ${DB_SSLMODE:-prefer}
+  IDENTITY_SERVICE_URL: http://identity-app:9000
+  CATALOG_SERVICE_URL: http://catalog-app:9000
+  BOOKING_SERVICE_URL: http://booking-app:9000
+  PAYMENT_SERVICE_URL: http://payment-app:9000
+  JWT_ISSUER: barberbrody-identity
+  JWT_AUDIENCE: barberbrody-api
+  JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public
+  JWT_ACCESS_TTL: "900"
+  JWT_REFRESH_TTL: "604800"
+  CORS_ALLOWED_ORIGINS: ${PUBLIC_URL:-http://localhost}
+
+x-app-common: &app-common
+  restart: unless-stopped
+  logging: *logging
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - internal
+  mem_limit: 512m
+  cpus: "1.0"
+
+x-web-common: &web-common
+  restart: unless-stopped
+  logging: *logging
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - edge
+    - internal
+  mem_limit: 128m
+  cpus: "0.5"
+
+services:
+  traefik:
+    # 3.6.1+ negotiates the Docker API version; older releases hardcode 1.24,
+    # which Docker 29+ rejects.
+    image: traefik:v3.6.6
+    restart: unless-stopped
+    logging: *logging
+    command:
+      - --configFile=/etc/traefik/traefik.yaml
+    ports:
+      - "80:80"
+    volumes:
+      - ./infrastructure/gateway/traefik.local.yaml:/etc/traefik/traefik.yaml:ro
+      - ./infrastructure/gateway/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - edge
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      - docker-socket-proxy
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      SERVICES: "1"
+      TASKS: "1"
+      VERSION: "1"
+      INFO: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - edge
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *logging
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: runtime
+      args:
+        VITE_API_URL: ""
+        VITE_PUSHER_APP_KEY: ${PUSHER_APP_KEY:-}
+        VITE_PUSHER_APP_CLUSTER: ${PUSHER_APP_CLUSTER:-ap1}
+        VITE_PUSHER_SCHEME: https
+    restart: unless-stopped
+    logging: *logging
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - edge
+    mem_limit: 128m
+    cpus: "0.5"
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: barberbrody_edge
+      traefik.http.routers.frontend.rule: PathPrefix(`/`)
+      traefik.http.routers.frontend.priority: "1"
+      traefik.http.routers.frontend.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
+      traefik.http.routers.frontend.middlewares: security-headers@file,compress@file
+      traefik.http.services.frontend.loadbalancer.server.port: "80"
+
+  identity-app:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/identity-service/Dockerfile
+      target: app
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Identity
+      APP_KEY_FILE: /run/secrets/app_key_identity
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: identity_db
+      DB_USERNAME: identity_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_identity
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private
+      SESSION_DRIVER: redis
+      SESSION_DOMAIN: null
+      FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_REDIRECT_URI: ${PUBLIC_URL:-http://localhost}/auth/google/callback
+      GOOGLE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      PUSHER_APP_ID: ${PUSHER_APP_ID:-}
+      PUSHER_APP_KEY: ${PUSHER_APP_KEY:-}
+      PUSHER_APP_CLUSTER: ${PUSHER_APP_CLUSTER:-ap1}
+      PUSHER_APP_SECRET_FILE: /run/secrets/pusher_app_secret
+      BROADCAST_CONNECTION: pusher
+    secrets:
+      - app_key_identity
+      - db_password_identity
+      - internal_token
+      - jwt_private
+      - jwt_public
+      - google_client_secret
+      - pusher_app_secret
+    depends_on:
+      - redis
+
+  identity-web:
+    <<: *web-common
+    build:
+      context: .
+      dockerfile: services/identity-service/Dockerfile
+      target: web
+    environment:
+      UPSTREAM: identity-app:9000
+      NGINX_ENVSUBST_FILTER: UPSTREAM
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: barberbrody_edge
+      traefik.http.routers.identity.rule: PathPrefix(`/api/register`) || PathPrefix(`/api/login`) || PathPrefix(`/api/logout`) || PathPrefix(`/api/me`) || PathPrefix(`/api/user`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/notifications`) || PathPrefix(`/api/broadcasting`) || PathPrefix(`/auth/google`)
+      traefik.http.routers.identity.priority: "50"
+      traefik.http.routers.identity.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
+      traefik.http.routers.identity.middlewares: security-headers@file,api-rate-limit@file
+      traefik.http.services.identity.loadbalancer.server.port: "80"
+    depends_on:
+      - identity-app
+
+  identity-worker:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/identity-service/Dockerfile
+      target: app
+    command: ["sh", "-c", "while true; do php artisan events:relay --limit=200; php artisan events:consume identity --once; sleep 5; done"]
+    healthcheck:
+      disable: true
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Identity Worker
+      APP_KEY_FILE: /run/secrets/app_key_identity
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: identity_db
+      DB_USERNAME: identity_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_identity
+      SESSION_DRIVER: redis
+      FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+      PUSHER_APP_ID: ${PUSHER_APP_ID:-}
+      PUSHER_APP_KEY: ${PUSHER_APP_KEY:-}
+      PUSHER_APP_CLUSTER: ${PUSHER_APP_CLUSTER:-ap1}
+      PUSHER_APP_SECRET_FILE: /run/secrets/pusher_app_secret
+      BROADCAST_CONNECTION: pusher
+    secrets:
+      - app_key_identity
+      - db_password_identity
+      - internal_token
+      - jwt_public
+      - pusher_app_secret
+    depends_on:
+      - redis
+      - identity-app
+
+  catalog-app:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
+      target: app
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Catalog
+      APP_KEY_FILE: /run/secrets/app_key_catalog
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: catalog_db
+      DB_USERNAME: catalog_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_catalog
+      FILESYSTEM_DISK: local
+    secrets:
+      - app_key_catalog
+      - db_password_catalog
+      - internal_token
+      - jwt_public
+    volumes:
+      - catalog_storage:/var/www/html/storage/app/public
+    depends_on:
+      - redis
+
+  catalog-web:
+    <<: *web-common
+    build:
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
+      target: web
+    environment:
+      UPSTREAM: catalog-app:9000
+      NGINX_ENVSUBST_FILTER: UPSTREAM
+    volumes:
+      - catalog_storage:/var/www/html/storage/app/public
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: barberbrody_edge
+      traefik.http.routers.catalog.rule: PathPrefix(`/api/partner/barbershop`) || PathPrefix(`/api/barbershop`) || PathPrefix(`/api/ratings`) || PathPrefix(`/storage`)
+      traefik.http.routers.catalog.priority: "10"
+      traefik.http.routers.catalog.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
+      traefik.http.routers.catalog.middlewares: security-headers@file,api-rate-limit@file
+      traefik.http.services.catalog.loadbalancer.server.port: "80"
+    depends_on:
+      - catalog-app
+
+  catalog-worker:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
+      target: app
+    command: ["sh", "-c", "while true; do php artisan events:relay --limit=200; sleep 5; done"]
+    healthcheck:
+      disable: true
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Catalog Worker
+      APP_KEY_FILE: /run/secrets/app_key_catalog
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: catalog_db
+      DB_USERNAME: catalog_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_catalog
+    secrets:
+      - app_key_catalog
+      - db_password_catalog
+      - internal_token
+      - jwt_public
+    volumes:
+      - catalog_storage:/var/www/html/storage/app/public
+    depends_on:
+      - redis
+      - catalog-app
+
+  booking-app:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/booking-service/Dockerfile
+      target: app
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Booking
+      APP_KEY_FILE: /run/secrets/app_key_booking
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: booking_db
+      DB_USERNAME: booking_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_booking
+    secrets:
+      - app_key_booking
+      - db_password_booking
+      - internal_token
+      - jwt_public
+    depends_on:
+      - redis
+
+  booking-web:
+    <<: *web-common
+    build:
+      context: .
+      dockerfile: services/booking-service/Dockerfile
+      target: web
+    environment:
+      UPSTREAM: booking-app:9000
+      NGINX_ENVSUBST_FILTER: UPSTREAM
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: barberbrody_edge
+      traefik.http.routers.booking.rule: PathPrefix(`/api/bookings`) || PathPrefix(`/api/partner/barbershop/bookings`) || PathPrefix(`/api/partner/barbershop/dashboard`) || PathRegexp(`^/api/barbershop/[^/]+/available-slots$`)
+      traefik.http.routers.booking.priority: "110"
+      traefik.http.routers.booking.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
+      traefik.http.routers.booking.middlewares: security-headers@file,api-rate-limit@file
+      traefik.http.services.booking.loadbalancer.server.port: "80"
+    depends_on:
+      - booking-app
+
+  booking-worker:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/booking-service/Dockerfile
+      target: app
+    command: ["sh", "-c", "while true; do php artisan events:relay --limit=200; php artisan events:consume booking --once; php artisan bookings:auto-revalidate; sleep 10; done"]
+    healthcheck:
+      disable: true
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Booking Worker
+      APP_KEY_FILE: /run/secrets/app_key_booking
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: booking_db
+      DB_USERNAME: booking_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_booking
+    secrets:
+      - app_key_booking
+      - db_password_booking
+      - internal_token
+      - jwt_public
+    depends_on:
+      - redis
+      - booking-app
+
+  payment-app:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+      target: app
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Payment
+      APP_KEY_FILE: /run/secrets/app_key_payment
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: payment_db
+      DB_USERNAME: payment_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_payment
+      XENDIT_API_KEY_FILE: /run/secrets/xendit_api_key
+      XENDIT_WEBHOOK_TOKEN_FILE: /run/secrets/xendit_webhook_token
+      XENDIT_BASE_URL: ${XENDIT_BASE_URL:-https://api.xendit.co}
+      FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+    secrets:
+      - app_key_payment
+      - db_password_payment
+      - internal_token
+      - jwt_public
+      - xendit_api_key
+      - xendit_webhook_token
+    depends_on:
+      - redis
+
+  payment-web:
+    <<: *web-common
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+      target: web
+    environment:
+      UPSTREAM: payment-app:9000
+      NGINX_ENVSUBST_FILTER: UPSTREAM
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: barberbrody_edge
+      traefik.http.routers.payment.rule: PathPrefix(`/api/payments`) || PathPrefix(`/api/xendit`) || PathPrefix(`/api/partner/barbershop/withdrawals`) || Path(`/api/partner/barbershop/balance`)
+      traefik.http.routers.payment.priority: "100"
+      traefik.http.routers.payment.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
+      traefik.http.routers.payment.middlewares: security-headers@file,api-rate-limit@file
+      traefik.http.services.payment.loadbalancer.server.port: "80"
+    depends_on:
+      - payment-app
+
+  payment-worker:
+    <<: *app-common
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+      target: app
+    command: ["sh", "-c", "while true; do php artisan events:relay --limit=200; sleep 5; done"]
+    healthcheck:
+      disable: true
+    environment:
+      <<: *app-env
+      APP_NAME: BarberBrody Payment Worker
+      APP_KEY_FILE: /run/secrets/app_key_payment
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_DATABASE: payment_db
+      DB_USERNAME: payment_user
+      DB_PASSWORD_FILE: /run/secrets/db_password_payment
+      XENDIT_API_KEY_FILE: /run/secrets/xendit_api_key
+      XENDIT_WEBHOOK_TOKEN_FILE: /run/secrets/xendit_webhook_token
+      XENDIT_BASE_URL: ${XENDIT_BASE_URL:-https://api.xendit.co}
+      FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+    secrets:
+      - app_key_payment
+      - db_password_payment
+      - internal_token
+      - jwt_public
+      - xendit_api_key
+      - xendit_webhook_token
+    depends_on:
+      - redis
+      - payment-app
+
+volumes:
+  redis_data:
+  catalog_storage:
+
+networks:
+  edge:
+    driver: bridge
+  internal:
+    driver: bridge
+    internal: true
+
+secrets:
+  app_key_identity:
+    file: ./infrastructure/secrets/app_key_identity.txt
+  app_key_catalog:
+    file: ./infrastructure/secrets/app_key_catalog.txt
+  app_key_booking:
+    file: ./infrastructure/secrets/app_key_booking.txt
+  app_key_payment:
+    file: ./infrastructure/secrets/app_key_payment.txt
+  db_password_identity:
+    file: ./infrastructure/secrets/db_password_identity.txt
+  db_password_catalog:
+    file: ./infrastructure/secrets/db_password_catalog.txt
+  db_password_booking:
+    file: ./infrastructure/secrets/db_password_booking.txt
+  db_password_payment:
+    file: ./infrastructure/secrets/db_password_payment.txt
+  internal_token:
+    file: ./infrastructure/secrets/internal_token.txt
+  jwt_private:
+    file: ./infrastructure/secrets/jwt-private.pem
+  jwt_public:
+    file: ./infrastructure/secrets/jwt-public.pem
+  xendit_api_key:
+    file: ./infrastructure/secrets/xendit_api_key.txt
+  xendit_webhook_token:
+    file: ./infrastructure/secrets/xendit_webhook_token.txt
+  google_client_secret:
+    file: ./infrastructure/secrets/google_client_secret.txt
+  pusher_app_secret:
+    file: ./infrastructure/secrets/pusher_app_secret.txt

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AuthState, User } from "../types/auth";
+import { tokenStore } from "../lib/tokens";
 import {
   getUser,
   login as loginSvc,
@@ -27,11 +28,17 @@ const useAuthStore = create<AuthState>()(
         // Cegah init dipanggil lebih dari sekali
         if (get().initialized) return;
 
+        if (!tokenStore.hasSession()) {
+          set({ user: null, initialized: true });
+          return;
+        }
+
         set({ loading: true });
         try {
           const res = await getUser();
           set({ user: res.data as User, initialized: true });
         } catch {
+          tokenStore.clear();
           set({ user: null, initialized: true });
         } finally {
           set({ loading: false });

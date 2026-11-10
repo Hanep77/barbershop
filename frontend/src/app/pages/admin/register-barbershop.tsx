@@ -20,6 +20,7 @@ import FindLocation from "../../components/find-location";
 import { useDebouncedCallback } from "use-debounce";
 import { AxiosError } from "axios";
 import { createBarbershop } from "../../../services/barbershop";
+import { refresh as refreshSession } from "../../../services/auth";
 import { useNavigate } from "react-router";
 import useAuthStore from "../../../store/authStore";
 
@@ -77,8 +78,18 @@ export function RegisterBarbershop() {
 
     // console.log(form);
     try {
-      await createBarbershop(form).then((data) => {
+      await createBarbershop(form).then(async (data) => {
         setUser(data.data.user);
+
+        // The identity service changed this account's role after the shop was
+        // created. Rotate tokens so subsequent requests carry the new claim.
+        try {
+          const refreshed = await refreshSession();
+          setUser(refreshed.data.user);
+        } catch (refreshError) {
+          console.error("Failed to refresh access token after shop creation", refreshError);
+        }
+
         toast.success("Barbershop created successfully");
         navigate("/admin/dashboard");
       });

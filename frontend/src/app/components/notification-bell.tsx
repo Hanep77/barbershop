@@ -38,6 +38,7 @@ const NotificationBell: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let channel: { stopListening: (event: string) => void } | undefined;
 
     const initializeNotifications = async () => {
       if (!user) return;
@@ -51,9 +52,9 @@ const NotificationBell: React.FC = () => {
         console.error("Error in initializeNotifications:", err);
       }
 
-      if (!isMounted) return;
+      if (!isMounted || !echo) return;
 
-      const channel = echo
+      channel = echo
         .private(`notifications.${user.id}`)
         .listen(".notification.sent", (e: any) => {
           if (isMounted) {
@@ -68,18 +69,15 @@ const NotificationBell: React.FC = () => {
             });
           }
         });
-
-      return () => {
-        channel.stopListening(".notification.sent");
-      };
     };
 
     initializeNotifications();
 
     return () => {
       isMounted = false;
+      channel?.stopListening(".notification.sent");
     };
-  }, [user, fetchNotifications, fetchUnreadCount, addNotification]);
+  }, [user, fetchNotifications, fetchUnreadCount, addNotification, markAsRead]);
 
   const handleMarkAsRead = (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation();

@@ -36,14 +36,9 @@ export function AdminWithdraw() {
   const loadWithdrawalData = async () => {
     try {
       setLoading(true);
-      // Fetch barbershop info for balance
-      const barbershopRes = await api.get("/api/partner/barbershop");
-
-      const barbershop = barbershopRes.data.barbershop;
-
-      if (barbershop) {
-        setBalance(barbershop.balance || 0);
-      }
+      // Balance is owned by the payment service.
+      const balanceRes = await api.get("/api/partner/barbershop/balance");
+      setBalance(balanceRes.data.available_balance ?? balanceRes.data.balance ?? 0);
 
       // Fetch withdrawals history
       const withdrawalsRes = await getWithdrawals();

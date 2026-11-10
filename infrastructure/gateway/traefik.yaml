@@ -1,0 +1,41 @@
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+api:
+  dashboard: false
+
+ping:
+  entryPoint: web
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+  docker:
+    endpoint: "tcp://docker-socket-proxy:2375"
+    exposedByDefault: false
+    network: edge
+
+log:
+  level: INFO
+
+accessLog: {}
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /acme/acme.json
+      httpChallenge:
+        entryPoint: web

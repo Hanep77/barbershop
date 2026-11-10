@@ -1,0 +1,26 @@
+# Production overlay for Proxmox/Debian application host.
+#
+#   docker compose -f infrastructure/docker/compose.yaml \
+#                  -f infrastructure/docker/compose.production.yaml --env-file .env.production up -d
+#
+# Requires: PUBLIC_URL, ACME_EMAIL, DB_HOST, PUSHER_*, GOOGLE_*, secrets present.
+# Also set TRAEFIK_ENTRYPOINTS=websecure in .env so every router listens on the
+# TLS entrypoint (the static config redirects :80 to :443).
+
+services:
+  traefik:
+    command:
+      - --configFile=/etc/traefik/traefik.yaml
+      - --certificatesResolvers.letsencrypt.acme.email=${ACME_EMAIL:?ACME_EMAIL is required}
+    ports: !override
+      - "80:80"
+      - "443:443"
+    volumes: !override
+      - ./infrastructure/gateway/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./infrastructure/gateway/dynamic:/etc/traefik/dynamic:ro
+      - traefik_acme:/acme
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+
+volumes:
+  traefik_acme:
