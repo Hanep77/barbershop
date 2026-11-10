@@ -36,11 +36,7 @@ export function Register() {
         user.password_confirmation,
       );
 
-      // if (user.role == "barbershop") {
-      //   navigate("/login");
-      // } else {
-      navigate("/");
-      // }
+      navigate(role === "owner" ? "/admin/register-barbershop" : "/");
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         console.log(err.response?.data);
