@@ -5,7 +5,7 @@ Target: two Debian VMs on Proxmox VE.
 | VM | Role | Suggested specs |
 |---|---|---|
 | `bb-app` | Docker Engine + Compose (Traefik, frontend, 4 services, Redis) | 4 vCPU, 8 GB RAM, 40 GB disk |
-| `bb-db` | MySQL 8 server | 2 vCPU, 4 GB RAM, 40 GB disk |
+| `bb-db` | PostgreSQL 17 server | 2 vCPU, 4 GB RAM, 40 GB disk |
 
 No Kubernetes, K3s or Swarm. Docker Compose is the only orchestrator.
 
@@ -32,30 +32,35 @@ below.
 ## 2. Prepare the database VM
 
 ```bash
-apt install -y mysql-server
-mysql_secure_installation
+apt install -y postgresql
 ```
 
-Bind MySQL to the private Proxmox network only (edit `mysqld.cnf`):
+Bind PostgreSQL to the private Proxmox network only
+(`/etc/postgresql/*/main/postgresql.conf`):
 
 ```ini
-bind-address = 10.10.10.11
+listen_addresses = '10.10.10.11'
 ```
 
-Create databases and users. Use one password per service from
-`infrastructure/secrets/db_password_*.txt`:
+Allow the application VM in `pg_hba.conf`:
 
-```bash
-mysql -u root -p < infrastructure/mysql/init.sql
+```ini
+host    all             all             10.10.10.10/32         scram-sha-256
 ```
 
-`init.sql` contains placeholders. Substitute them, or run the statements one by
-one with the generated passwords. Grant only the matching schema to each user.
-
-Open MySQL only to the application VM (Proxmox firewall / `ufw`):
+Restart PostgreSQL, then copy the generated
+`infrastructure/secrets/db_password_*.txt` files to the database VM and run the
+provisioning script there. It creates one role and one database per service and
+grants nothing outside that database:
 
 ```bash
-ufw allow from 10.10.10.10 to any port 3306 proto tcp
+sudo SECRETS_DIR=/path/to/secrets sh infrastructure/postgres/init.sh
+```
+
+Open PostgreSQL only to the application VM (Proxmox firewall / `ufw`):
+
+```bash
+ufw allow from 10.10.10.10 to any port 5432 proto tcp
 ```
 
 ## 3. Get the code and secrets
@@ -81,7 +86,8 @@ Create `.env` from `infrastructure/docker/.env.example`:
 ```dotenv
 PUBLIC_URL=https://barberbrody.example.com
 DB_HOST=10.10.10.11
-DB_PORT=3306
+DB_PORT=5432
+DB_SSLMODE=prefer
 ACME_EMAIL=admin@example.com
 GOOGLE_CLIENT_ID=...
 PUSHER_APP_ID=...

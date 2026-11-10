@@ -66,7 +66,7 @@ flowchart TB
 
 ## Principles
 
-- One logical database per service, one MySQL user per database, no
+- One logical database per service, one PostgreSQL role per database, no
   cross-service foreign keys and no cross-service SQL.
 - Synchronous internal REST only where a response is required
   (`/internal/*`, shared token + internal Docker network).

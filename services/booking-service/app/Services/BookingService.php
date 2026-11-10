@@ -252,26 +252,44 @@ class BookingService
     }
 
     /**
-     * MySQL advisory lock keyed by capster + day. sqlite (tests) has no
-     * GET_LOCK, so the overlap query alone serialises the request.
+     * Advisory lock keyed by capster + day, so concurrent requests cannot both
+     * pass the overlap check. MySQL uses GET_LOCK, PostgreSQL uses a
+     * transaction-scoped advisory lock. sqlite (tests) has neither; the
+     * overlap query alone serialises those in-process requests.
      */
     private function acquireCapsterLock(string $capsterId, string $date): bool
     {
-        if (DB::connection()->getDriverName() !== 'mysql') {
-            return false;
-        }
+        $driver = DB::connection()->getDriverName();
+        $name = $this->lockName($capsterId, $date);
 
         try {
-            $row = DB::selectOne('SELECT GET_LOCK(?, 5) AS acquired', [$this->lockName($capsterId, $date)]);
+            if ($driver === 'mysql') {
+                $row = DB::selectOne('SELECT GET_LOCK(?, 5) AS acquired', [$name]);
 
-            return (int) ($row->acquired ?? 0) === 1;
+                return (int) ($row->acquired ?? 0) === 1;
+            }
+
+            if ($driver === 'pgsql') {
+                // Blocks until the lock is free; released automatically when
+                // the surrounding transaction commits or rolls back.
+                DB::selectOne('SELECT pg_advisory_xact_lock(hashtext(?))', [$name]);
+
+                return true;
+            }
         } catch (Throwable) {
             return false;
         }
+
+        return false;
     }
 
     private function releaseCapsterLock(string $capsterId, string $date): void
     {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            // PostgreSQL xact locks are released by the transaction itself.
+            return;
+        }
+
         try {
             DB::selectOne('SELECT RELEASE_LOCK(?) AS released', [$this->lockName($capsterId, $date)]);
         } catch (Throwable) {

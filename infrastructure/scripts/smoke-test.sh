@@ -8,8 +8,9 @@ failures=0
 
 expect() {
   local label="$1" expected="$2" url="$3"
+  local method="${4:-GET}"
   local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' "$url")"
+  code="$(curl -s -o /dev/null -w '%{http_code}' -X "$method" "$url")"
   if [[ ",$expected," == *",$code,"* ]]; then
     printf 'OK   %-44s %s\n' "$label" "$code"
   else
@@ -26,7 +27,7 @@ expect "payment unauthenticated create" "401" "$BASE/api/payments/create"
 expect "withdrawal unauthenticated" "401" "$BASE/api/partner/barbershop/withdrawals"
 expect "dashboard unauthenticated" "401" "$BASE/api/partner/barbershop/dashboard/stats"
 expect "internal endpoint not routed" "404" "$BASE/internal/users/00000000-0000-0000-0000-000000000000"
-expect "webhook without token" "401,503" "$BASE/api/payments/webhook/xendit"
+expect "webhook without token" "401,503" "$BASE/api/payments/webhook/xendit" POST
 
 echo
 if [[ $failures -eq 0 ]]; then

@@ -27,7 +27,7 @@ BarberBrody is a modern, full-stack barbershop marketplace and management system
 ### Backend
 - **Framework:** [Laravel 12](https://laravel.com/)
 - **Authentication:** [Laravel Sanctum](https://laravel.com/docs/sanctum) & [Socialite](https://laravel.com/docs/socialite) (OAuth)
-- **Database:** MySQL
+- **Database:** MySQL (monolith) / PostgreSQL (microservices)
 - **Tooling:** Composer, Artisan, PHPUnit
 
 ### Frontend
@@ -48,7 +48,7 @@ BarberBrody is a modern, full-stack barbershop marketplace and management system
 - PHP 8.2+
 - Node.js & npm/pnpm
 - Composer
-- MySQL
+- MySQL (monolith) or PostgreSQL (microservices)
 
 ### 1. Backend Setup
 ```bash
@@ -130,7 +130,7 @@ frontend/               # React SPA (JWT bearer + refresh)
 infrastructure/
 ├── docker/             # Dockerfiles targets, compose, production overlay
 ├── gateway/            # Traefik static + dynamic configuration
-├── mysql/              # per-service DB/user provisioning
+├── postgres/           # per-service DB/role provisioning
 ├── migration/          # monolith → services data migration + validator
 ├── scripts/            # secrets generation, smoke tests
 └── monitoring/         # reserved for the next phase
@@ -140,8 +140,8 @@ docs/                   # architecture, mapping, contracts, deployment, testing
 Key points:
 
 - Auth: JWT RS256 access token (15 min) + rotating refresh token (7 days).
-- Database: one MySQL server, four schemas (`identity_db`, `catalog_db`,
-  `booking_db`, `payment_db`), one least-privilege user each, no cross-service
+- Database: one PostgreSQL server, four databases (`identity_db`, `catalog_db`,
+  `booking_db`, `payment_db`), one least-privilege role each, no cross-service
   FK or SQL.
 - Sync calls: `/internal/*` REST with a shared token on the internal Docker
   network; never routed by Traefik.
@@ -159,6 +159,10 @@ cp infrastructure/docker/.env.example .env             # set DB_HOST / PUBLIC_UR
 docker compose -f infrastructure/docker/compose.yaml config
 docker compose -f infrastructure/docker/compose.yaml up -d --build
 ```
+
+For local development (PostgreSQL and Traefik on port 8080 included), add
+`-f infrastructure/docker/compose.local.yaml` and set
+`PUBLIC_URL=http://localhost:8080` in `.env`.
 
 Full instructions: [`docs/deployment-guide.md`](docs/deployment-guide.md).
 Architecture: [`docs/architecture.md`](docs/architecture.md).

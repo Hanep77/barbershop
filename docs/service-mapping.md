@@ -80,7 +80,7 @@ did not exist, and some controllers mixed domains.
 - Category/capster IDOR.
 - Cross-service direct table access (removed by construction).
 - Production `APP_DEBUG` default corrected in service `.env.example` files.
-- Separate DB credentials per service (`infrastructure/mysql/init.sql`).
+- Separate DB credentials per service (`infrastructure/postgres/init.sh`).
 
 ## Remaining assumptions / limitations
 

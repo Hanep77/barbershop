@@ -47,7 +47,7 @@ Session/cache/job data is not migrated.
 1. Take a consistent snapshot/backup of the monolith database. Do not delete
    any monolith tables.
 2. Provision the four databases and users with
-   `infrastructure/mysql/init.sql`.
+   `infrastructure/postgres/init.sh`.
 3. Run each service's migrations (`php artisan migrate --force`).
 4. Set source and target connection env vars and run:
    ```bash

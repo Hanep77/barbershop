@@ -102,8 +102,9 @@ Notification consumption was verified separately with a mocked Redis facade
 - **Real Xendit invoice/refund/payout calls**: no credentials.
 - **Google OAuth and Pusher realtime**: no credentials; flows faked, and the
   Google redirect returns `503` when unconfigured.
-- **MySQL migrations and the data migration scripts**: no MySQL server; run
-  `php artisan migrate --force` per service and
+- **PostgreSQL migrations and the data migration scripts**: no PostgreSQL
+  server; run `php artisan migrate --force` per service and
   `php infrastructure/migration/migrate.php --apply` followed by
-  `validate.php` on the database VM.
+  `validate.php` on the database VM. The migration scripts still use a MySQL
+  target DSN and need adapting for PostgreSQL.
 - **k6 load test**: script provided but not executed.

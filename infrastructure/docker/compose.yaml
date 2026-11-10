@@ -20,6 +20,7 @@ x-app-env: &app-env
   REDIS_PASSWORD: "null"
   INTERNAL_SERVICE_TOKEN_FILE: /run/secrets/internal_token
   INTERNAL_SERVICE_TIMEOUT: "5"
+  DB_SSLMODE: ${DB_SSLMODE:-prefer}
   IDENTITY_SERVICE_URL: http://identity-app:9000
   CATALOG_SERVICE_URL: http://catalog-app:9000
   BOOKING_SERVICE_URL: http://booking-app:9000
@@ -54,7 +55,9 @@ x-web-common: &web-common
 
 services:
   traefik:
-    image: traefik:v3.3
+    # 3.6.1+ negotiates the Docker API version; older releases hardcode 1.24,
+    # which Docker 29+ rejects.
+    image: traefik:v3.6.6
     restart: unless-stopped
     logging: *logging
     command:
@@ -126,7 +129,7 @@ services:
     cpus: "0.5"
     labels:
       traefik.enable: "true"
-      traefik.docker.network: edge
+      traefik.docker.network: barberbrody_edge
       traefik.http.routers.frontend.rule: PathPrefix(`/`)
       traefik.http.routers.frontend.priority: "1"
       traefik.http.routers.frontend.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
@@ -143,9 +146,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Identity
       APP_KEY_FILE: /run/secrets/app_key_identity
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: identity_db
       DB_USERNAME: identity_user
       DB_PASSWORD_FILE: /run/secrets/db_password_identity
@@ -183,7 +186,7 @@ services:
       NGINX_ENVSUBST_FILTER: UPSTREAM
     labels:
       traefik.enable: "true"
-      traefik.docker.network: edge
+      traefik.docker.network: barberbrody_edge
       traefik.http.routers.identity.rule: PathPrefix(`/api/register`) || PathPrefix(`/api/login`) || PathPrefix(`/api/logout`) || PathPrefix(`/api/me`) || PathPrefix(`/api/user`) || PathPrefix(`/api/auth`) || PathPrefix(`/api/notifications`) || PathPrefix(`/api/broadcasting`) || PathPrefix(`/auth/google`)
       traefik.http.routers.identity.priority: "50"
       traefik.http.routers.identity.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
@@ -205,9 +208,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Identity Worker
       APP_KEY_FILE: /run/secrets/app_key_identity
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: identity_db
       DB_USERNAME: identity_user
       DB_PASSWORD_FILE: /run/secrets/db_password_identity
@@ -238,9 +241,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Catalog
       APP_KEY_FILE: /run/secrets/app_key_catalog
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: catalog_db
       DB_USERNAME: catalog_user
       DB_PASSWORD_FILE: /run/secrets/db_password_catalog
@@ -268,7 +271,7 @@ services:
       - catalog_storage:/var/www/html/storage/app/public
     labels:
       traefik.enable: "true"
-      traefik.docker.network: edge
+      traefik.docker.network: barberbrody_edge
       traefik.http.routers.catalog.rule: PathPrefix(`/api/partner/barbershop`) || PathPrefix(`/api/barbershop`) || PathPrefix(`/api/ratings`) || PathPrefix(`/storage`)
       traefik.http.routers.catalog.priority: "10"
       traefik.http.routers.catalog.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
@@ -290,9 +293,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Catalog Worker
       APP_KEY_FILE: /run/secrets/app_key_catalog
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: catalog_db
       DB_USERNAME: catalog_user
       DB_PASSWORD_FILE: /run/secrets/db_password_catalog
@@ -317,9 +320,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Booking
       APP_KEY_FILE: /run/secrets/app_key_booking
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: booking_db
       DB_USERNAME: booking_user
       DB_PASSWORD_FILE: /run/secrets/db_password_booking
@@ -342,7 +345,7 @@ services:
       NGINX_ENVSUBST_FILTER: UPSTREAM
     labels:
       traefik.enable: "true"
-      traefik.docker.network: edge
+      traefik.docker.network: barberbrody_edge
       traefik.http.routers.booking.rule: PathPrefix(`/api/bookings`) || PathPrefix(`/api/partner/barbershop/bookings`) || PathPrefix(`/api/partner/barbershop/dashboard`) || PathRegexp(`^/api/barbershop/[^/]+/available-slots$`)
       traefik.http.routers.booking.priority: "110"
       traefik.http.routers.booking.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
@@ -364,9 +367,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Booking Worker
       APP_KEY_FILE: /run/secrets/app_key_booking
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: booking_db
       DB_USERNAME: booking_user
       DB_PASSWORD_FILE: /run/secrets/db_password_booking
@@ -389,9 +392,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Payment
       APP_KEY_FILE: /run/secrets/app_key_payment
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: payment_db
       DB_USERNAME: payment_user
       DB_PASSWORD_FILE: /run/secrets/db_password_payment
@@ -420,7 +423,7 @@ services:
       NGINX_ENVSUBST_FILTER: UPSTREAM
     labels:
       traefik.enable: "true"
-      traefik.docker.network: edge
+      traefik.docker.network: barberbrody_edge
       traefik.http.routers.payment.rule: PathPrefix(`/api/payments`) || PathPrefix(`/api/xendit`) || PathPrefix(`/api/partner/barbershop/withdrawals`) || Path(`/api/partner/barbershop/balance`)
       traefik.http.routers.payment.priority: "100"
       traefik.http.routers.payment.entrypoints: ${TRAEFIK_ENTRYPOINTS:-web}
@@ -442,9 +445,9 @@ services:
       <<: *app-env
       APP_NAME: BarberBrody Payment Worker
       APP_KEY_FILE: /run/secrets/app_key_payment
-      DB_CONNECTION: mysql
-      DB_HOST: ${DB_HOST:-mysql-db}
-      DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECTION: pgsql
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
       DB_DATABASE: payment_db
       DB_USERNAME: payment_user
       DB_PASSWORD_FILE: /run/secrets/db_password_payment

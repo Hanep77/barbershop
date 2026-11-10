@@ -13,20 +13,23 @@
      the target Debian host.
 2. **No real credentials** for Xendit, Google OAuth or Pusher. All external
    integrations are covered by fakes; live behaviour is not claimed.
-3. **MySQL was not available.** Per-service tests run on SQLite in-memory and
-   an HTTP integration run used SQLite files. Run migrations against MySQL on
-   the database VM before cutover.
+3. **PostgreSQL was not available during the original verification.**
+   Per-service tests run on SQLite in-memory and an HTTP integration run used
+   SQLite files. The booking lock now also handles PostgreSQL; run migrations
+   against PostgreSQL on the database VM before cutover.
 4. **Redis event transport was not exercised end-to-end** because Redis was not
    running locally. The outbox rows, consumer idempotency (with a mocked Redis
    facade), and producer payloads are tested; the actual `XADD`/`XREADGROUP`
    path must be smoke-tested with the Redis container.
-5. **Data migration scripts** were not executed against real monolith data
-   (MySQL unavailable). They are idempotent by design and include a validator.
+5. **Data migration scripts** were not executed against real monolith data.
+   They read from the monolith MySQL source and still hardcode a MySQL target
+   DSN; adapt the target connection before importing into PostgreSQL. They are
+   idempotent by design and include a validator.
 
 ## Architecture assumptions
 
-- One MySQL server with four logical databases and four least-privilege users
-  (`infrastructure/mysql/init.sql`).
+- One PostgreSQL server with four databases and four least-privilege roles
+  (`infrastructure/postgres/init.sh`).
 - Redis Streams + transactional outbox is the event bus. Consumers run in
   dedicated worker containers with short polling loops (5-10 s).
 - Payment is the only service that calls Xendit and the only owner of balances
