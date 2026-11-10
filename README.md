@@ -111,3 +111,59 @@ Run backend tests using PHPUnit:
 ```bash
 php artisan test
 ```
+
+---
+
+## 🧩 Microservices Architecture (`feat/barberbrody-microservices`)
+
+The monolith at the repository root remains intact while the same application
+is split into four independently buildable Laravel services plus a gateway:
+
+```text
+services/
+├── identity-service/   # users, JWT auth, refresh tokens, notifications
+├── catalog-service/    # barbershops, images, services, capsters, ratings
+├── booking-service/    # bookings, availability, cancellation, dashboard composition
+└── payment-service/    # Xendit, payments, refunds, withdrawals, ledger/balance
+
+frontend/               # React SPA (JWT bearer + refresh)
+infrastructure/
+├── docker/             # Dockerfiles targets, compose, production overlay
+├── gateway/            # Traefik static + dynamic configuration
+├── mysql/              # per-service DB/user provisioning
+├── migration/          # monolith → services data migration + validator
+├── scripts/            # secrets generation, smoke tests
+└── monitoring/         # reserved for the next phase
+docs/                   # architecture, mapping, contracts, deployment, testing
+```
+
+Key points:
+
+- Auth: JWT RS256 access token (15 min) + rotating refresh token (7 days).
+- Database: one MySQL server, four schemas (`identity_db`, `catalog_db`,
+  `booking_db`, `payment_db`), one least-privilege user each, no cross-service
+  FK or SQL.
+- Sync calls: `/internal/*` REST with a shared token on the internal Docker
+  network; never routed by Traefik.
+- Async: Redis Streams + transactional outbox + idempotent consumers.
+- Gateway: Traefik only exposes 80/443; Docker socket through a read-only
+  proxy; TLS in the production overlay.
+- Money is owned by Payment; booking price/duration and identity names are
+  snapshotted into bookings.
+
+Quick start (application host):
+
+```bash
+bash infrastructure/scripts/generate-dev-secrets.sh   # replace Xendit/Google/Pusher values
+cp infrastructure/docker/.env.example .env             # set DB_HOST / PUBLIC_URL
+docker compose -f infrastructure/docker/compose.yaml config
+docker compose -f infrastructure/docker/compose.yaml up -d --build
+```
+
+Full instructions: [`docs/deployment-guide.md`](docs/deployment-guide.md).
+Architecture: [`docs/architecture.md`](docs/architecture.md).
+API contracts: [`docs/api-contracts.md`](docs/api-contracts.md).
+Testing: [`docs/testing-report.md`](docs/testing-report.md).
+Known limitations: [`docs/known-limitations.md`](docs/known-limitations.md).
+
+The legacy monolith setup below still works on the original branch.

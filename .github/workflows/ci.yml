@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - feat/barberbrody-microservices
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - identity-service
+          - catalog-service
+          - booking-service
+          - payment-service
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, bcmath, pdo_mysql, sqlite3, pdo_sqlite, openssl, sodium
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ matrix.service }}-${{ hashFiles('services/**/composer.lock') }}
+          restore-keys: composer-${{ matrix.service }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run tests
+        run: php artisan test
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run build
+
+  compose-config:
+    name: compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare environment and secrets
+        run: |
+          cp infrastructure/docker/.env.example .env
+          bash infrastructure/scripts/generate-dev-secrets.sh
+
+      - name: Validate base compose
+        run: docker compose -f infrastructure/docker/compose.yaml config > /dev/null
+
+      - name: Validate production compose
+        env:
+          ACME_EMAIL: ci@example.com
+          TRAEFIK_ENTRYPOINTS: websecure
+        run: |
+          docker compose -f infrastructure/docker/compose.yaml \
+            -f infrastructure/docker/compose.production.yaml config > /dev/null
