@@ -164,6 +164,49 @@ For local development (PostgreSQL and Traefik on port 8080 included), add
 `-f infrastructure/docker/compose.local.yaml` and set
 `PUBLIC_URL=http://localhost:8080` in `.env`.
 
+### Demo data (seeders)
+
+Each service ships its own seeder. Run migrations first, then seed in this
+order (identity → catalog → booking → payment):
+
+```bash
+# Local stack: always pass both compose files (drop the second one in production).
+seed_stack() {
+  docker compose --project-directory . \
+    -f infrastructure/docker/compose.yaml \
+    -f infrastructure/docker/compose.local.yaml "$@"
+}
+
+for service in identity catalog booking payment; do
+  seed_stack run --rm ${service}-app php artisan migrate --force
+  seed_stack run --rm ${service}-app php artisan db:seed --force
+done
+```
+
+`--force` is required because the compose stack runs with `APP_ENV=production`.
+
+The demo dataset is deterministic: every service derives the same UUIDs from
+`database/seeders/DemoFixtures.php`, so barbershops, services, capsters,
+bookings, ratings and payments all reference each other correctly. It seeds 6
+barbershops, 14 services, 7 capsters, 15 reviews, 36 bookings, 36 payments and
+2 withdrawals. Booking ids are fixed (`1..36`); the seeders are idempotent but
+assume those ids are free, so use a fresh database (`migrate:fresh --seed`) if
+you have your own bookings.
+
+All accounts use the password `password`:
+
+| Account | Email |
+|---|---|
+| Shop owner / admin | `admin@barbershop.com` |
+| Other shop owners | `rangga@barbershop.com`, `dewi@barbershop.com`, `bagus@barbershop.com`, `siti@barbershop.com`, `andi@barbershop.com` |
+| Customers | `budi@example.com`, `rina@example.com`, `fajar@example.com`, `ayu@example.com`, `dimas@example.com`, `nabila@example.com`, `yoga@example.com`, `clara@example.com` |
+
+Reset a single service to its demo state:
+
+```bash
+seed_stack run --rm booking-app php artisan migrate:fresh --seed --force
+```
+
 Full instructions: [`docs/deployment-guide.md`](docs/deployment-guide.md).
 Architecture: [`docs/architecture.md`](docs/architecture.md).
 API contracts: [`docs/api-contracts.md`](docs/api-contracts.md).
