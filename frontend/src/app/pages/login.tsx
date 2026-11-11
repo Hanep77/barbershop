@@ -10,6 +10,7 @@ export function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<LoginErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const { login, loading } = useAuthStore();
 
   const handleLogin = async (e: SubmitEvent) => {
@@ -23,6 +24,7 @@ export function Login() {
     } as LoginForm;
 
     try {
+      setFormError(null);
       const res = await login(user.email, user.password);
       if (res?.role == "barbershop") {
         navigate("/admin/dashboard");
@@ -30,8 +32,15 @@ export function Login() {
         navigate("/");
       }
     } catch (err: unknown) {
-      const laravelErrors = (err as any)?.response?.data?.errors as LoginErrors;
-      setFieldErrors(laravelErrors);
+      const data = (err as any)?.response?.data;
+      const laravelErrors = data?.errors as LoginErrors | undefined;
+
+      if (laravelErrors) {
+        setFieldErrors(laravelErrors);
+      } else {
+        setFieldErrors({});
+        setFormError(data?.message ?? "Login failed. Please try again.");
+      }
     }
   };
 
@@ -141,6 +150,9 @@ export function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
+            {formError && (
+              <p className="text-red-500 italic">{formError}</p>
+            )}
             {/* Email Field */}
             <div>
               {fieldErrors.email && (

@@ -20,7 +20,10 @@ new_hex 32 > "$SECRETS/internal_token.txt"
 # a committed key (test keys are generated on demand and gitignored).
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$SECRETS/jwt-private.pem"
 openssl rsa -in "$SECRETS/jwt-private.pem" -pubout -out "$SECRETS/jwt-public.pem"
-chmod 600 "$SECRETS/jwt-private.pem"
+# Docker Compose bind-mounts file secrets with their host permissions, and the
+# containers run as a non-root user. 0600 would make the key unreadable
+# (login fails with "Permission denied" on /run/secrets/jwt_private).
+chmod 644 "$SECRETS/jwt-private.pem"
 
 for name in xendit_api_key xendit_webhook_token google_client_secret pusher_app_secret; do
   [ -f "$SECRETS/${name}.txt" ] || : > "$SECRETS/${name}.txt"

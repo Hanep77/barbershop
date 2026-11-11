@@ -21,10 +21,10 @@ x-app-env: &app-env
   INTERNAL_SERVICE_TOKEN_FILE: /run/secrets/internal_token
   INTERNAL_SERVICE_TIMEOUT: "5"
   DB_SSLMODE: ${DB_SSLMODE:-prefer}
-  IDENTITY_SERVICE_URL: http://identity-app:9000
-  CATALOG_SERVICE_URL: http://catalog-app:9000
-  BOOKING_SERVICE_URL: http://booking-app:9000
-  PAYMENT_SERVICE_URL: http://payment-app:9000
+  IDENTITY_SERVICE_URL: http://identity-web:80
+  CATALOG_SERVICE_URL: http://catalog-web:80
+  BOOKING_SERVICE_URL: http://booking-web:80
+  PAYMENT_SERVICE_URL: http://payment-web:80
   JWT_ISSUER: barberbrody-identity
   JWT_AUDIENCE: barberbrody-api
   JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public
